@@ -5,7 +5,7 @@
 Writes a file to a paper in your terminal. *Especially* if that file is Markdown! Features supported
 include:
 
-1.  The usual text, and paragraphs with automatic line wrapping. You can manually wrap with  
+1.  The usual text, and paragraphs with automatic line wrapping. You can manually wrap with
     hard breaks as expected.
 
     Otherwise, paragraphs will be nicely spaced.
@@ -51,6 +51,11 @@ include:
 | lunaryorn/mdcat  | Yes        | No    | No     | No       | syntect    | Sometimes | No     | No           |
 
 \* subjective
+
+## Future features
+
+In future, I hope to leverage syncat stylesheets to allow customization of all the parts, but for now,
+the style is fixed.
 
 ## Installation
 
