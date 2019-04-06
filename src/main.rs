@@ -52,7 +52,7 @@ pub struct Opts {
 fn print<I>(opts: Opts, sources: I) where I: Iterator<Item=Result<String, std::io::Error>> {
     let h_margin = opts.h_margin.unwrap_or(opts.margin);
     let v_margin = opts.v_margin.unwrap_or(opts.margin);
-    let terminal_width = terminal_size().map(|(Width(width), _)| width).unwrap_or(80) as usize;
+    let terminal_width = terminal_size().map(|(Width(width), _)| width).unwrap_or(opts.width as u16) as usize;
     let width = usize::min(opts.width, terminal_width - 1);
     let centering = " ".repeat((terminal_width - width) / 2);
     let paper_style = Colour::Black.on(Colour::White);
@@ -72,6 +72,11 @@ fn print<I>(opts: Opts, sources: I) where I: Iterator<Item=Result<String, std::i
         if opts.dev {
             for event in parser {
                 println!("{:?}", event);
+            }
+        } else if opts.no_paper {
+            let mut printer = Printer::new("", "", "", width, Style::default(), &opts);
+            for event in parser {
+                printer.handle(event);
             }
         } else {
             println!("{}{}", centering, blank_line);
