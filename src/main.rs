@@ -3,7 +3,7 @@ use std::io::{self, Read};
 use std::fs::{self, File};
 use structopt::StructOpt;
 use terminal_size::{Width, terminal_size};
-use pulldown_cmark::{Parser, Options};
+use pulldown_cmark::{Parser, Options, Event};
 use syncat_stylesheet::Stylesheet;
 
 mod dirs;
@@ -34,6 +34,10 @@ pub struct Opts {
     #[structopt(short, long, default_value="92")]
     pub width: usize,
 
+    /// Don't parse as Markdown, just render the plain text on a paper
+    #[structopt(short, long)]
+    pub plain: bool,
+
     /// Use syncat to highlight code blocks. Requires you have syncat installed.
     #[structopt(short, long)]
     pub syncat: bool,
@@ -52,7 +56,7 @@ fn print<I>(opts: Opts, sources: I) where I: Iterator<Item=Result<String, std::i
     let v_margin = opts.v_margin.unwrap_or(opts.margin);
     let terminal_width = terminal_size().map(|(Width(width), _)| width).unwrap_or(opts.width as u16) as usize;
     let width = usize::min(opts.width, terminal_width - 1);
-    
+
     if width < h_margin * 2 + 40 {
         eprintln!("The width is too short!");
         return;
@@ -77,12 +81,35 @@ fn print<I>(opts: Opts, sources: I) where I: Iterator<Item=Result<String, std::i
                 continue;
             }
         };
-        let parser = Parser::new_ext(&source, Options::all());
-        if opts.dev {
+        if opts.plain {
+            println!("{}{}", centering, blank_line);
+            for _ in 0..v_margin {
+                println!("{}{}{}", centering, blank_line, end_shadow);
+            }
+
+            for line in source.lines() {
+                println!(
+                    "{}{}{}{}{}{}",
+                    centering,
+                    margin,
+                    paper_style.paint(line),
+                    paper_style.paint(" ".repeat((width - 2 * h_margin).saturating_sub(line.chars().count()))),
+                    margin,
+                    end_shadow,
+                );
+            }
+
+            for _ in 0..v_margin {
+                println!("{}{}{}", centering, blank_line, end_shadow);
+            }
+            println!("{} {}", centering, shadow_style.paint(" ".repeat(width)));
+        } else if opts.dev {
+            let parser = Parser::new_ext(&source, Options::all());
             for event in parser {
                 println!("{:?}", event);
             }
         } else {
+            let parser = Parser::new_ext(&source, Options::all());
             println!("{}{}", centering, blank_line);
             for _ in 0..v_margin {
                 println!("{}{}{}", centering, blank_line, end_shadow);

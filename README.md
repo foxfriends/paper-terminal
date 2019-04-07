@@ -122,6 +122,7 @@ USAGE:
 FLAGS:
         --dev        Print in debug mode
         --help       Prints help information
+    -p, --plain      Don't parse as Markdown, just render the plain text on a paper
     -s, --syncat     Use syncat to highlight code blocks. Requires you have syncat installed.
     -V, --version    Prints version information
 
