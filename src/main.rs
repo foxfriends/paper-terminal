@@ -54,6 +54,12 @@ fn print<I>(opts: Opts, sources: I) where I: Iterator<Item=Result<String, std::i
     let v_margin = opts.v_margin.unwrap_or(opts.margin);
     let terminal_width = terminal_size().map(|(Width(width), _)| width).unwrap_or(opts.width as u16) as usize;
     let width = usize::min(opts.width, terminal_width - 1);
+    
+    if width < h_margin * 2 + 40 {
+        eprintln!("The width is too short!");
+        return;
+    }
+
     let centering = " ".repeat((terminal_width - width) / 2);
     let paper_style = Colour::Black.on(Colour::White);
     let shadow_style = Style::default().on(Colour::Fixed(8));

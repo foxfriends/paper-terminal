@@ -1,4 +1,7 @@
 [syncat]: https://github.com/oinkiguana/syncat
+[oinkiguana/paper]: https://github.com/oinkiguana/paper
+[ttscoff/mdless]: https://github.com/ttscoff/mdless
+[lunaryorn/mdcat]: https://github.com/lunaryorn/mdcat
 
 # Paper terminal
 
@@ -46,11 +49,13 @@ include:
 
 ## Comparison with other command line Markdown renderers
 
-| Tool             | CommonMark | Paper | Paging | Wrapping | Syntax     | Images    | Tables | Looks good\* |
-| :--------------- | :--------- | :---- | :----- | :------- | :--------- | :-------- | :----- | :----------- |
-| oinkiguana/paper | Yes        | Yes   | No     | Yes      | syncat     | Pixelated | Yes    | Yes          |
-| ttscoff/mdless   | Yes        | No    | Yes    | No       | pygmentize | Sometimes | Yes    | No           |
-| lunaryorn/mdcat  | Yes        | No    | No     | No       | syntect    | Sometimes | No     | No           |
+Not a very good comparison..., this is more of an example of a table!
+
+| Tool                 | CommonMark | Paper | Paging | Wrapping | Syntax     | Images    | Tables | Looks good\* |
+| :------------------- | :--------- | :---- | :----- | :------- | :--------- | :-------- | :----- | :----------- |
+| [oinkiguana/paper][] | Yes        | Yes   | No     | Yes      | syncat     | Pixelated | Yes    | Yes          |
+| [ttscoff/mdless][]   | Yes        | No    | Yes    | No       | pygmentize | Sometimes | Yes    | No           |
+| [lunaryorn/mdcat][]  | Yes        | No    | No     | No       | syntect    | Sometimes | No     | No           |
 
 \* subjective
 

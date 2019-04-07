@@ -458,10 +458,10 @@ impl<'a> Printer<'a> {
                     Tag::Strong => { self.scope.push(Scope::Bold); }
                     Tag::Strikethrough => { self.scope.push(Scope::Strikethrough); }
                     Tag::Code => { self.scope.push(Scope::Code); }
-                    Tag::Link(link_type, destination, title) => {
+                    Tag::Link(_link_type, _destination, _title) => {
                         self.scope.push(Scope::Underline);
                     }
-                    Tag::Image(link_type, destination, title) => {
+                    Tag::Image(_link_type, destination, title) => {
                         self.flush();
                         let available_width = self.width - self.prefix_len() - self.suffix_len();
                         match image::open(destination.as_ref()) {
@@ -555,7 +555,7 @@ impl<'a> Printer<'a> {
                         self.queue_empty();
                         self.scope.pop();
                     }
-                    Tag::Link(link_type, destination, title) => {
+                    Tag::Link(_link_type, destination, title) => {
                         if !title.is_empty() && !destination.is_empty() {
                             self.handle_text(format!(" <{}: {}>", title, destination));
                         } else if !destination.is_empty() {
@@ -565,7 +565,7 @@ impl<'a> Printer<'a> {
                         }
                         self.scope.pop();
                     }
-                    Tag::Image(link_type, destination, title) => {
+                    Tag::Image(_link_type, _destination, _title) => {
                         self.flush();
                         self.scope.pop();
                         self.scope.pop();
@@ -580,8 +580,8 @@ impl<'a> Printer<'a> {
                 }
             }
             Event::Text(text) => { self.handle_text(text); }
-            Event::Html(text) => { /* unknown */ }
-            Event::InlineHtml(text) => { /* unknown */ }
+            Event::Html(_text) => { /* unimplemented */ }
+            Event::InlineHtml(_text) => { /* unimplemented */ }
             Event::FootnoteReference(text) => { self.handle_text(&format!("[{}]", text)); }
             Event::SoftBreak => { self.handle_text(" "); }
             Event::HardBreak => { self.flush(); }
