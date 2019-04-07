@@ -34,7 +34,7 @@ impl Scope {
             Scope::ListItem(..) => 4,
             Scope::CodeBlock(..) => 2,
             Scope::BlockQuote => 4,
-            Scope::Heading(1) => 5,
+            Scope::Heading(2) => 5,
             Scope::Heading(..) => 4,
             _ => 0
         }
@@ -61,9 +61,8 @@ impl Scope {
             }
             Scope::CodeBlock(..) => "  ".to_string(),
             Scope::BlockQuote => "│   ".to_string(),
-
-            Scope::Heading(1) => "├─── ".to_string(),
-            Scope::Heading(2) => "    ".to_string(),
+            Scope::Heading(1) => "    ".to_string(),
+            Scope::Heading(2) => "├─── ".to_string(),
             Scope::Heading(3) => "    ".to_string(),
             Scope::Heading(4) => "    ".to_string(),
             Scope::Heading(5) => "    ".to_string(),
@@ -75,8 +74,7 @@ impl Scope {
     fn suffix_len(&self) -> usize {
         match self {
             Scope::CodeBlock(..) => 2,
-            Scope::Heading(1) => 5,
-            Scope::Heading(..) => 4,
+            Scope::Heading(2) => 5,
             _ => 0
         }
     }
@@ -84,12 +82,7 @@ impl Scope {
     fn suffix(&mut self) -> String {
         match self {
             Scope::CodeBlock(..) => "  ".to_string(),
-            Scope::Heading(1) => " ───┤".to_string(),
-            Scope::Heading(2) => "    ".to_string(),
-            Scope::Heading(3) => "    ".to_string(),
-            Scope::Heading(4) => "    ".to_string(),
-            Scope::Heading(5) => "    ".to_string(),
-            Scope::Heading(6) => "    ".to_string(),
+            Scope::Heading(2) => " ───┤".to_string(),
             _ => String::new(),
         }
     }
@@ -103,10 +96,10 @@ impl Scope {
             Scope::Code => Style::default(),
             Scope::CodeBlock(..) => Style::default(),
             Scope::Heading(1) => style.bold(),
-            Scope::Heading(2) => style.bold().underline(),
-            Scope::Heading(3) => style.underline(),
+            Scope::Heading(2) => style.bold(),
+            Scope::Heading(3) => style.bold().underline(),
             Scope::Heading(4) => style.bold().underline().dimmed(),
-            Scope::Heading(5) => style.underline().dimmed(),
+            Scope::Heading(5) => style.underline(),
             Scope::Heading(6) => style.dimmed(),
             _ => style,
         }
@@ -411,7 +404,13 @@ impl<'a> Printer<'a> {
                 match tag {
                     Tag::Paragraph => { self.flush(); }
                     Tag::Rule => {}
-                    Tag::Header(level) => { self.scope.push(Scope::Heading(level)); }
+                    Tag::Header(level) => {
+                        self.flush();
+                        if level == 1 {
+                            self.print_rule();
+                        }
+                        self.scope.push(Scope::Heading(level));
+                    }
                     Tag::BlockQuote => {
                         self.flush();
                         self.scope.push(Scope::BlockQuote);
@@ -517,10 +516,13 @@ impl<'a> Printer<'a> {
                         self.flush();
                         self.queue_empty();
                     }
-                    Tag::Header(..) => {
+                    Tag::Header(level) => {
                         self.flush();
-                        self.queue_empty();
                         self.scope.pop();
+                        if level == 1 {
+                            self.print_rule();
+                        }
+                        self.queue_empty();
                     }
                     Tag::Rule => {
                         self.flush();
