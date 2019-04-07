@@ -1,14 +1,16 @@
 use std::path::PathBuf;
 use std::io;
-use std::fs;
+use std::fs::{self, File};
 use structopt::StructOpt;
 use terminal_size::{Width, terminal_size};
 use pulldown_cmark::{Parser, Options};
-use ansi_term::{Style, Colour};
+use syncat_stylesheet::Stylesheet;
 
+mod dirs;
 mod printer;
-mod words;
 mod table;
+mod words;
+
 use printer::Printer;
 
 /// Prints papers in your terminal
@@ -31,10 +33,6 @@ pub struct Opts {
     /// The width of the paper (text and margin)
     #[structopt(short, long, default_value="92")]
     pub width: usize,
-
-    /// Don't bother with the whole paper part, just print the markdown nicely
-    #[structopt(short, long)]
-    pub no_paper: bool,
 
     /// Use syncat to highlight code blocks. Requires you have syncat installed.
     #[structopt(short, long)]
@@ -61,8 +59,13 @@ fn print<I>(opts: Opts, sources: I) where I: Iterator<Item=Result<String, std::i
     }
 
     let centering = " ".repeat((terminal_width - width) / 2);
-    let paper_style = Colour::Black.on(Colour::White);
-    let shadow_style = Style::default().on(Colour::Fixed(8));
+
+    let stylesheet = File::open(dirs::syncat_config().join("style/active/md.syncat"))
+        .map_err(Into::into)
+        .and_then(|mut file| Stylesheet::from_reader(&mut file))
+        .unwrap_or_else(|_| include_str!("default.syncat").parse::<Stylesheet>().unwrap());
+    let paper_style = stylesheet.resolve_basic(&["paper"], None).build();
+    let shadow_style = stylesheet.resolve_basic(&["shadow"], None).build();
     let blank_line = format!("{}", paper_style.paint(" ".repeat(width)));
     let end_shadow = format!("{}", shadow_style.paint(" "));
     let margin = format!("{}", paper_style.paint(" ".repeat(h_margin)));
@@ -79,18 +82,13 @@ fn print<I>(opts: Opts, sources: I) where I: Iterator<Item=Result<String, std::i
             for event in parser {
                 println!("{:?}", event);
             }
-        } else if opts.no_paper {
-            let mut printer = Printer::new("", "", "", width, Style::default(), &opts);
-            for event in parser {
-                printer.handle(event);
-            }
         } else {
             println!("{}{}", centering, blank_line);
             for _ in 0..v_margin {
                 println!("{}{}{}", centering, blank_line, end_shadow);
             }
 
-            let mut printer = Printer::new(&centering, &margin, &end_shadow, width - 2 * h_margin, paper_style, &opts);
+            let mut printer = Printer::new(&centering, &margin, width - 2 * h_margin, &stylesheet, &opts);
             for event in parser {
                 printer.handle(event);
             }

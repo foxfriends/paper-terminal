@@ -4,17 +4,24 @@ use ansi_term::Style;
 use pulldown_cmark::{Alignment, Event, Tag};
 use image::{self, GenericImageView as _};
 use console::measure_text_width;
+use syncat_stylesheet::Stylesheet;
 use termpix;
 use crate::words::Words;
 use crate::table::Table;
 
 #[derive(Debug, PartialEq)]
 enum Scope {
+    Paper,
     Indent,
     Italic,
     Bold,
     Strikethrough,
-    Underline,
+    Link,
+    Caption,
+    Rule,
+    FootnoteDefinition,
+    FootnoteReference,
+    FootnoteContent,
     List(Option<usize>),
     ListItem(Option<usize>, bool),
     Code,
@@ -31,6 +38,7 @@ impl Scope {
     fn prefix_len(&self) -> usize {
         match self {
             Scope::Indent => 4,
+            Scope::FootnoteContent => 4,
             Scope::ListItem(..) => 4,
             Scope::CodeBlock(..) => 2,
             Scope::BlockQuote => 4,
@@ -43,6 +51,7 @@ impl Scope {
     fn prefix(&mut self) -> String {
         match self {
             Scope::Indent => "    ".to_string(),
+            Scope::FootnoteContent => "    ".to_string(),
             Scope::ListItem(Some(index), ref mut handled) => {
                 if *handled {
                     "    ".to_string()
@@ -87,21 +96,37 @@ impl Scope {
         }
     }
 
-    fn style(&self, style: Style) -> Style {
+    fn name(&self) -> &'static str {
+        use Scope::*;
         match self {
-            Scope::Italic => style.italic(),
-            Scope::Bold => style.bold(),
-            Scope::Strikethrough => style.strikethrough(),
-            Scope::Underline => style.underline(),
-            Scope::Code => Style::default(),
-            Scope::CodeBlock(..) => Style::default(),
-            Scope::Heading(1) => style.bold(),
-            Scope::Heading(2) => style.bold(),
-            Scope::Heading(3) => style.bold().underline(),
-            Scope::Heading(4) => style.bold().underline().dimmed(),
-            Scope::Heading(5) => style.underline(),
-            Scope::Heading(6) => style.dimmed(),
-            _ => style,
+            Paper => "paper",
+            Indent => "indent",
+            Italic => "emphasis",
+            Bold => "strong",
+            Strikethrough => "strikethrough",
+            Link => "link",
+            Caption => "caption",
+            Rule => "hr",
+            FootnoteDefinition => "footnote-def",
+            FootnoteReference => "footnote-ref",
+            FootnoteContent => "footnote",
+            List(Some(..)) => "ol",
+            List(None) => "ul",
+            ListItem(..) => "li",
+            Code => "code",
+            CodeBlock(..) => "codeblock",
+            BlockQuote => "blockquote",
+            Table(..) => "table",
+            TableHead => "th",
+            TableRow => "tr",
+            TableCell => "td",
+            Heading(1) => "h1",
+            Heading(2) => "h2",
+            Heading(3) => "h3",
+            Heading(4) => "h4",
+            Heading(5) => "h5",
+            Heading(6) => "h6",
+            _ => "",
         }
     }
 }
@@ -109,8 +134,7 @@ impl Scope {
 pub struct Printer<'a> {
     centering: &'a str,
     margin: &'a str,
-    shadow: &'a str,
-    paper_style: Style,
+    stylesheet: &'a Stylesheet,
     opts: &'a crate::Opts,
     width: usize,
     buffer: String,
@@ -121,18 +145,17 @@ pub struct Printer<'a> {
 }
 
 impl<'a> Printer<'a> {
-    pub fn new(centering: &'a str, margin: &'a str, shadow: &'a str, width: usize, paper_style: Style, opts: &'a crate::Opts) -> Printer<'a> {
+    pub fn new(centering: &'a str, margin: &'a str, width: usize, stylesheet: &'a Stylesheet, opts: &'a crate::Opts) -> Printer<'a> {
         Printer {
             centering,
             margin,
-            shadow,
             width,
-            paper_style,
+            stylesheet,
             opts,
             buffer: String::new(),
             table: (vec![], vec![]),
             content: String::new(),
-            scope: vec![],
+            scope: vec![Scope::Paper],
             empty_queued: false,
         }
     }
@@ -150,11 +173,13 @@ impl<'a> Printer<'a> {
     }
 
     fn prefix(&mut self) -> (String, usize) {
+        let stylesheet = self.stylesheet;
         self.scope
             .iter_mut()
-            .scan(self.paper_style, |style, scope| {
-                *style = scope.style(*style);
+            .scan(vec![], |scopes, scope| {
+                scopes.push(scope.name());
                 let prefix = scope.prefix();
+                let style = stylesheet.resolve_basic(&scopes[..], Some("prefix")).build();
                 Some((format!("{}", style.paint(&prefix)), prefix.chars().count()))
             })
             .fold((String::new(), 0), |(s, c), (s2, c2)| {
@@ -163,11 +188,13 @@ impl<'a> Printer<'a> {
     }
 
     fn suffix(&mut self) -> (String, usize) {
+        let stylesheet = self.stylesheet;
         self.scope
             .iter_mut()
-            .scan(self.paper_style, |style, scope| {
-                *style = scope.style(*style);
+            .scan(vec![], |scopes, scope| {
+                scopes.push(scope.name());
                 let suffix = scope.suffix();
+                let style = stylesheet.resolve_basic(&scopes[..], Some("suffix")).build();
                 Some((format!("{}", style.paint(&suffix)), suffix.chars().count()))
             })
             .fold((String::new(), 0), |(s, c), (s2, c2)| {
@@ -175,8 +202,21 @@ impl<'a> Printer<'a> {
             })
     }
 
+    fn style2(&self, token: Option<&str>) -> Style {
+        let scope_names: Vec<_> = self.scope.iter().map(Scope::name).collect();
+        self.stylesheet.resolve_basic(&scope_names, token).build()
+    }
+
     fn style(&self) -> Style {
-        self.scope.iter().fold(self.paper_style, |style, scope| scope.style(style))
+        self.style2(None)
+    }
+
+    fn shadow(&self) -> String {
+        format!("{}", self.stylesheet.resolve_basic(&["shadow"], None).build().paint(" "))
+    }
+
+    fn paper_style(&self) -> Style {
+        self.stylesheet.resolve_basic(&["paper"], None).build()
     }
 
     fn queue_empty(&mut self) {
@@ -191,10 +231,10 @@ impl<'a> Printer<'a> {
             self.centering,
             self.margin,
             prefix,
-            self.paper_style.paint(" ".repeat(self.width - prefix_len - suffix_len)),
+            self.paper_style().paint(" ".repeat(self.width - prefix_len - suffix_len)),
             suffix,
             self.margin,
-            self.shadow,
+            self.shadow(),
         );
         self.empty_queued = false;
     }
@@ -207,10 +247,10 @@ impl<'a> Printer<'a> {
             self.centering,
             self.margin,
             prefix,
-            self.paper_style.paint("─".repeat(self.width - prefix_len - suffix_len)),
+            self.style().paint("─".repeat(self.width - prefix_len - suffix_len)),
             suffix,
             self.margin,
-            self.shadow,
+            self.shadow(),
         );
     }
 
@@ -221,7 +261,7 @@ impl<'a> Printer<'a> {
         let (heading, rows) = std::mem::replace(&mut self.table, (vec![], vec![]));
         let available_width = self.width - self.prefix_len() - self.suffix_len();
         let table_str = Table::new(heading, rows, available_width)
-            .print(self.paper_style, alignments);
+            .print(self.paper_style(), alignments);
         for line in table_str.lines() {
             let (prefix, _) = self.prefix();
             let (suffix, _) = self.suffix();
@@ -231,10 +271,10 @@ impl<'a> Printer<'a> {
                 self.margin,
                 line,
                 prefix,
-                self.paper_style.paint(" ".repeat(available_width - measure_text_width(line))),
+                self.paper_style().paint(" ".repeat(available_width - measure_text_width(line))),
                 suffix,
                 self.margin,
-                self.shadow,
+                self.shadow(),
             );
         }
     }
@@ -242,6 +282,11 @@ impl<'a> Printer<'a> {
     fn flush_buffer(&mut self) {
         match self.scope.last() {
             Some(Scope::CodeBlock(lang)) => {
+                let style = if lang.is_empty() || !self.opts.syncat {
+                    self.style2(Some("txt"))
+                } else {
+                    self.style2(Some(lang))
+                };
                 let lang = lang.to_string();
                 let mut first_prefix = Some(self.prefix());
                 let mut first_suffix = Some(self.suffix());
@@ -293,10 +338,10 @@ impl<'a> Printer<'a> {
                     self.centering,
                     self.margin,
                     prefix,
-                    " ".repeat(available_width),
+                    style.paint(" ".repeat(available_width)),
                     suffix,
                     self.margin,
-                    self.shadow,
+                    self.shadow(),
                 );
 
                 for line in buffer.lines() {
@@ -307,12 +352,11 @@ impl<'a> Printer<'a> {
                         self.centering,
                         self.margin,
                         prefix,
-                        line,
+                        style.paint(line),
                         suffix,
                         self.margin,
-                        self.shadow,
+                        self.shadow(),
                     );
-                    self.content.clear();
                 }
 
                 let (prefix, _) = first_prefix.take().unwrap_or_else(|| self.prefix());
@@ -322,10 +366,10 @@ impl<'a> Printer<'a> {
                     self.centering,
                     self.margin,
                     prefix,
-                    format!("{}{}", " ".repeat(available_width - lang.chars().count()), self.style().dimmed().paint(lang)),
+                    format!("{}{}", " ".repeat(available_width - lang.chars().count()), self.style2(Some("lang-tag")).paint(lang)),
                     suffix,
                     self.margin,
-                    self.shadow,
+                    self.shadow(),
                 );
 
             }
@@ -350,9 +394,9 @@ impl<'a> Printer<'a> {
             prefix,
             self.content,
             suffix,
-            self.paper_style.paint(" ".repeat(self.width - measure_text_width(&self.content) - prefix_len - suffix_len)),
+            self.paper_style().paint(" ".repeat(self.width - measure_text_width(&self.content) - prefix_len - suffix_len)),
             self.margin,
-            self.shadow,
+            self.shadow(),
         );
         self.content.clear();
     }
@@ -403,7 +447,10 @@ impl<'a> Printer<'a> {
                 }
                 match tag {
                     Tag::Paragraph => { self.flush(); }
-                    Tag::Rule => {}
+                    Tag::Rule => {
+                        self.flush();
+                        self.scope.push(Scope::Rule);
+                    }
                     Tag::Header(level) => {
                         self.flush();
                         if level == 1 {
@@ -433,9 +480,11 @@ impl<'a> Printer<'a> {
                     }
                     Tag::FootnoteDefinition(text) => {
                         self.flush();
+                        self.scope.push(Scope::FootnoteDefinition);
                         self.handle_text(&format!("{}:", text));
+                        self.scope.pop();
                         self.flush();
-                        self.scope.push(Scope::Indent);
+                        self.scope.push(Scope::FootnoteContent);
                     }
                     Tag::HtmlBlock => { /* unknown */ }
                     Tag::Table(columns) => { self.scope.push(Scope::Table(columns)) }
@@ -459,7 +508,7 @@ impl<'a> Printer<'a> {
                     Tag::Strikethrough => { self.scope.push(Scope::Strikethrough); }
                     Tag::Code => { self.scope.push(Scope::Code); }
                     Tag::Link(_link_type, _destination, _title) => {
-                        self.scope.push(Scope::Underline);
+                        self.scope.push(Scope::Link);
                     }
                     Tag::Image(_link_type, destination, title) => {
                         self.flush();
@@ -487,23 +536,23 @@ impl<'a> Printer<'a> {
                                         line,
                                         suffix,
                                         self.margin,
-                                        self.shadow,
+                                        self.shadow(),
                                     );
                                 }
 
                                 self.scope.push(Scope::Indent);
-                                self.scope.push(Scope::Underline);
+                                self.scope.push(Scope::Caption);
 
                                 self.handle_text(title);
                             }
                             Err(error) => {
                                 self.handle_text("Cannot open image ");
                                 self.scope.push(Scope::Indent);
-                                self.scope.push(Scope::Underline);
+                                self.scope.push(Scope::Link);
                                 self.handle_text(destination);
                                 self.scope.pop();
                                 self.handle_text(&format!(": {}", error));
-                                self.scope.push(Scope::Underline);
+                                self.scope.push(Scope::Caption);
                                 self.flush();
                             }
                         }
@@ -527,11 +576,12 @@ impl<'a> Printer<'a> {
                     Tag::Rule => {
                         self.flush();
                         self.print_rule();
+                        self.scope.pop();
                     }
                     Tag::List(..) => {
                         self.flush();
-                        self.queue_empty();
                         self.scope.pop();
+                        self.queue_empty();
                     }
                     Tag::Item => {
                         self.flush();
@@ -542,18 +592,18 @@ impl<'a> Printer<'a> {
                     },
                     Tag::BlockQuote => {
                         self.flush();
-                        self.queue_empty();
                         self.scope.pop();
+                        self.queue_empty();
                     }
                     Tag::Table(..) => {
                         self.print_table();
-                        self.queue_empty();
                         self.scope.pop();
+                        self.queue_empty();
                     }
                     Tag::CodeBlock(..) => {
                         self.flush_buffer();
-                        self.queue_empty();
                         self.scope.pop();
+                        self.queue_empty();
                     }
                     Tag::Link(_link_type, destination, title) => {
                         if !title.is_empty() && !destination.is_empty() {
@@ -582,7 +632,11 @@ impl<'a> Printer<'a> {
             Event::Text(text) => { self.handle_text(text); }
             Event::Html(_text) => { /* unimplemented */ }
             Event::InlineHtml(_text) => { /* unimplemented */ }
-            Event::FootnoteReference(text) => { self.handle_text(&format!("[{}]", text)); }
+            Event::FootnoteReference(text) => { 
+                self.scope.push(Scope::FootnoteReference);
+                self.handle_text(&format!("[{}]", text)); 
+                self.scope.pop();
+            }
             Event::SoftBreak => { self.handle_text(" "); }
             Event::HardBreak => { self.flush(); }
             Event::TaskListMarker(checked) => {
