@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::io;
+use std::io::{self, Read};
 use std::fs::{self, File};
 use structopt::StructOpt;
 use terminal_size::{Width, terminal_size};
@@ -105,18 +105,9 @@ fn main() {
     let opts = Opts::from_args();
 
     if opts.files.is_empty() {
-        let stdin = io::stdin();
-        loop {
-            let mut line = String::new();
-            match stdin.read_line(&mut line) {
-                Ok(0) => return,
-                Ok(..) => print!("{}", line),
-                Err(error) => {
-                    eprintln!("{}", error);
-                    return
-                }
-            }
-        }
+        let mut string = String::new();
+        io::stdin().read_to_string(&mut string).unwrap();
+        print(opts, vec![Ok(string)].into_iter());
     } else {
         let sources = opts.files.clone()
             .into_iter()
