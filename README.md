@@ -49,7 +49,7 @@ include:
 
 ## Comparison with other command line Markdown renderers
 
-Not a very good comparison..., this is more of an example of a table!
+Not a very good comparison... this is more of an example of a table!
 
 | Tool                 | CommonMark | Paper | Paging | Wrapping | Syntax     | Images    | Tables | Looks good\* |
 | :------------------- | :--------- | :---- | :----- | :------- | :--------- | :-------- | :----- | :----------- |

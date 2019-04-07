@@ -7,11 +7,9 @@ shadow {
   background-color: 8;
 }
 
-li "prefix" {
-  dim: true;
-}
-
+li "prefix",
 blockquote "prefix" {
+  color: 8;
   dim: true;
 }
 
