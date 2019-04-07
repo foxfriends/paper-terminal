@@ -104,5 +104,5 @@ OPTIONS:
     -w, --width <width>          The width of the paper (text and margin) [default: 92]
 
 ARGS:
-    <file>...    Files to print<Paste>
+    <file>...    Files to print
 ```
