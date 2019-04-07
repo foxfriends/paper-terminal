@@ -59,10 +59,34 @@ Not a very good comparison... this is more of an example of a table!
 
 \* subjective
 
-## Future features
+## Styling
 
-In future, I hope to leverage syncat stylesheets to allow customization of all the parts, but for now,
-the style is fixed.
+Paper uses [syncat stylesheets][] to allow full customization of styling. See the default stylesheet (`src/default.syncat`)
+as an example of how this works.
+
+*   Different scopes are represented as kinds, inspired by the corresponding HTML tag names.
+
+    *   `h1` through `h6`
+    *   `strong`
+    *   `emphasis`
+    *   `strikethrough`
+    *   `code`
+    *   `blockquote`
+    *   `ul`, `ol`, `li`
+    *   `footnote-ref`, `footnote-def`, `footnote`
+    *   `table`
+    *   `caption`
+    *   `link`
+
+*   The paper and shadow can be matched with `paper` and `shadow`. Styles applied to `paper` are applied to everything.
+*   The `"prefix"` and `"suffix"` tokens can be used to match the decorations
+    *   List item bullets
+    *   Blockquote markers
+    *   Code block margins
+*   The `"lang-tag"` token matches the language name written in the bottom corner of the code block
+*   You can apply styles to code blocks with a specific language by using the language name as the token
+
+For now, the prefix/suffix contents are not customizable, but this may be added in future if it is desired.
 
 ## Installation
 
@@ -96,11 +120,10 @@ USAGE:
     paper [FLAGS] [OPTIONS] [file]...
 
 FLAGS:
-        --dev         Print in debug mode
-        --help        Prints help information
-    -n, --no-paper    Don't bother with the whole paper part, just print the markdown nicely
-    -s, --syncat      Use syncat to highlight code blocks. Requires you have syncat installed.
-    -V, --version     Prints version information
+        --dev        Print in debug mode
+        --help       Prints help information
+    -s, --syncat     Use syncat to highlight code blocks. Requires you have syncat installed.
+    -V, --version    Prints version information
 
 OPTIONS:
     -h, --h-margin <h-margin>    Horizontal margin
