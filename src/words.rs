@@ -1,22 +1,31 @@
-pub struct Words<'a> {
-    source: &'a str,
+pub struct Words<S: AsRef<str>> {
+    source: S,
     position: usize,
+    previous: usize,
 }
 
-impl<'a> Words<'a> {
-    pub fn new(source: &'a str) -> Self {
+impl<S: AsRef<str>> Words<S> {
+    pub fn new(source: S) -> Self {
         Self {
             source,
+            previous: 0,
             position: 0,
         }
     }
 }
 
-impl<'a> Iterator for Words<'a> {
+impl<S: AsRef<str>> Words<S> {
+    pub fn undo(&mut self) {
+        self.position = self.previous;
+    }
+}
+
+impl<S: AsRef<str>> Iterator for Words<S> {
     type Item = String;
 
     fn next(&mut self) -> Option<String> {
-        let chars: Vec<char> = self.source.chars().skip(self.position).collect();
+        self.previous = self.position;
+        let chars: Vec<char> = self.source.as_ref().chars().skip(self.position).collect();
         let mut start = 0;
         while start < chars.len() && chars[start].is_whitespace() {
             start += 1;

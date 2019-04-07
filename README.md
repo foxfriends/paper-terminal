@@ -5,7 +5,7 @@
 Writes a file to a paper in your terminal. *Especially* if that file is Markdown! Features supported
 include:
 
-1.  The usual text, and paragraphs with automatic line wrapping. You can manually wrap with
+1.  The usual text, and paragraphs with automatic line-wrapping. You can manually wrap with
     hard breaks as expected.
 
     Otherwise, paragraphs will be nicely spaced.

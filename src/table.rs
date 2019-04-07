@@ -1,3 +1,4 @@
+use std::io::Write;
 use ansi_term::Style;
 use pulldown_cmark::Alignment;
 use console::{measure_text_width, strip_ansi_codes};
@@ -23,23 +24,14 @@ impl Table {
 
         // NOTE: for now, styling is not supported within tables because that gets really hard
         let titles = titles.iter()
-            .map(|title| strip_ansi_codes(title))
+            .map(|title| strip_ansi_codes(title).trim().to_string())
             .collect::<Vec<_>>();
         let rows = rows.iter()
             .map(|row| row.iter()
-                 .map(|cell| strip_ansi_codes(cell))
+                 .map(|cell| strip_ansi_codes(cell).trim().to_string())
                  .collect()
              )
             .collect::<Vec<Vec<_>>>();
-
-        //let format = FormatBuilder::new()
-            //.borders('│')
-            //.column_separator('│')
-            //.separator(LinePosition::Top, LineSeparator::new('─', '┬', '┌', '┐'))
-            //.separator(LinePosition::Title, LineSeparator::new('═', '╪', '╞', '╡'))
-            //.separator(LinePosition::Intern, LineSeparator::new('─', '┼', '├', '┤'))
-            //.separator(LinePosition::Bottom, LineSeparator::new('─', '┴', '└', '┘'))
-            //.build();
 
         let num_cols = usize::max(
             titles.len(),
@@ -115,30 +107,77 @@ impl Table {
         if col_widths.iter().sum::<usize>() > max_chars_width {
             return format!("{}", paper_style.paint("[Table too large to fit]"));
         }
-        "".to_string()
+
+        let mut buffer = vec![];
+        print_separator(&mut buffer, &col_widths, '─', '┌', '┬', '┐', paper_style);
+        if !titles.is_empty() {
+            print_row(&mut buffer, &col_widths, alignment, &titles, paper_style);
+            print_separator(&mut buffer, &col_widths, '═', '╞', '╪', '╡', paper_style);
+        }
+        let row_count = rows.len();
+        for (i, row) in rows.into_iter().enumerate() {
+            print_row(&mut buffer, &col_widths, alignment, &row, paper_style);
+            if i != row_count - 1 {
+                print_separator(&mut buffer, &col_widths, '─', '├', '┼', '┤', paper_style);
+            }
+        }
+        print_separator(&mut buffer, &col_widths, '─', '└', '┴', '┘', paper_style);
+
+        String::from_utf8(buffer).unwrap()
     }
 }
-/*
-        let mut buffer = vec![];
-        table.print(&mut buffer).unwrap();
-        let content = String::from_utf8(buffer).unwrap();
-        for line in content.lines() {
-            let (prefix, prefix_len) = self.prefix();
-            let (suffix, suffix_len) = self.suffix();
-            let available_width = self.width - prefix_len - suffix_len;
-            let used_width = usize::min(available_width, line.chars().count());
-            println!(
-                "{}{}{}{}{}{}{}{}",
-                self.centering,
-                self.margin,
-                prefix,
-                self.paper_style.paint(line.chars().take(available_width).collect::<String>()),
-                self.paper_style.paint(" ".repeat(available_width - used_width)),
-                suffix,
-                self.margin,
-                self.shadow,
-                );
+
+fn print_row<W: Write>(w: &mut W, cols: &[usize], alignment: &[Alignment], row: &[String], paper_style: Style) {
+    let mut row_words = row
+        .into_iter()
+        .map(|s| Words::new(s))
+        .collect::<Vec<_>>();
+    loop {
+        let mut done = true;
+        write!(w, "{}", paper_style.paint("│")).unwrap();
+        for (i, words) in row_words.iter_mut().enumerate() {
+            let mut line = match words.next() {
+                Some(line) => line.trim().to_string(),
+                None => {
+                    write!(w, "{}", paper_style.paint(format!(" {: <width$} │", " ", width=cols[i]))).unwrap();
+                    continue;
+                }
+            };
+            loop {
+                match words.next() {
+                    Some(next) => {
+                        if measure_text_width(&line) + measure_text_width(&next) <= cols[i] {
+                            line += &next;
+                        } else {
+                            words.undo();
+                            done = false;
+                            break;
+                        }
+                    }
+                    None => break,
+                };
+            }
+            line = line.trim().to_string();
+            let padded = if alignment[i] == Alignment::Center {
+                format!(" {: ^width$} │", line, width=cols[i])
+            } else if alignment[i] == Alignment::Right {
+                format!(" {: >width$} │", line, width=cols[i])
+            } else {
+                format!(" {: <width$} │", line, width=cols[i])
+            };
+            write!(w, "{}", paper_style.paint(padded)).unwrap();
+        }
+        write!(w, "\n").unwrap();
+        if done {
+            break;
         }
     }
 }
-*/
+
+fn print_separator<W: Write>(w: &mut W, cols: &[usize], mid: char, left: char, cross: char, right: char, paper_style: Style) {
+    let line = cols.iter()
+        .map(|width| mid.to_string().repeat(*width))
+        .collect::<Vec<_>>()
+        .join(&format!("{}{}{}", mid, cross, mid));
+    write!(w, "{}\n", paper_style.paint(format!("{}{}{}{}{}", left, mid, line, mid, right))).unwrap();
+}

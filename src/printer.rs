@@ -385,7 +385,7 @@ impl<'a> Printer<'a> {
             if measure_text_width(&self.content) + word.len() + self.prefix_len() + self.suffix_len() > self.width {
                 self.flush();
             }
-            let mut word = if self.content.is_empty() {
+            let mut word = if self.target().is_empty() {
                 word.trim()
             } else {
                 &word
