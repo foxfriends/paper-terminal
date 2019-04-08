@@ -13,4 +13,4 @@ termpix = { git = "https://github.com/oinkiguana/termpix.git" }
 image = "0.21"
 console = "0.7"
 directories = "1.0"
-syncat-stylesheet = { git = "https://github.com/oinkiguana/syncat.git" }
+syncat-stylesheet = "0.1"
