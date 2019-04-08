@@ -512,53 +512,75 @@ impl<'a> Printer<'a> {
                     }
                     Tag::Image(_link_type, destination, title) => {
                         self.flush();
-                        let available_width = self.width - self.prefix_len() - self.suffix_len();
-                        match image::open(destination.as_ref()) {
-                            Ok(image) => {
-                                let (mut width, mut height) = image.dimensions();
-                                if width > available_width as u32 {
-                                    let scale = available_width as f64 / width as f64;
-                                    width = (width as f64 * scale) as u32;
-                                    height = (height as f64 * scale) as u32;
+
+                        if !self.opts.no_images {
+                            let available_width = self.width - self.prefix_len() - self.suffix_len();
+                            match image::open(destination.as_ref()) {
+                                Ok(image) => {
+                                    let (mut width, mut height) = image.dimensions();
+                                    if width > available_width as u32 {
+                                        let scale = available_width as f64 / width as f64;
+                                        width = (width as f64 * scale) as u32;
+                                        height = (height as f64 * scale) as u32;
+                                    }
+                                    let mut vec = vec![];
+                                    termpix::print_image(image, true, width, height, &mut vec);
+                                    let string = String::from_utf8(vec).unwrap();
+
+                                    for line in string.lines() {
+                                        let (prefix, _) = self.prefix();
+                                        let (suffix, _) = self.suffix();
+                                        println!(
+                                            "{}{}{}{}{}{}{}",
+                                            self.centering,
+                                            self.margin,
+                                            prefix,
+                                            line,
+                                            suffix,
+                                            self.margin,
+                                            self.shadow(),
+                                        );
+                                    }
+
+                                    self.scope.push(Scope::Indent);
+                                    self.scope.push(Scope::Caption);
+                                    self.handle_text(title);
                                 }
-                                let mut vec = vec![];
-                                termpix::print_image(image, true, width, height, &mut vec);
-                                let string = String::from_utf8(vec).unwrap();
-
-                                for line in string.lines() {
-                                    let (prefix, _) = self.prefix();
-                                    let (suffix, _) = self.suffix();
-                                    println!(
-                                        "{}{}{}{}{}{}{}",
-                                        self.centering,
-                                        self.margin,
-                                        prefix,
-                                        line,
-                                        suffix,
-                                        self.margin,
-                                        self.shadow(),
-                                    );
+                                Err(error) => {
+                                    self.handle_text("Cannot open image ");
+                                    self.scope.push(Scope::Indent);
+                                    self.scope.push(Scope::Link);
+                                    self.handle_text(destination);
+                                    self.scope.pop();
+                                    self.handle_text(&format!(": {}", error));
+                                    self.scope.push(Scope::Caption);
+                                    self.flush();
                                 }
-
-                                self.scope.push(Scope::Indent);
-                                self.scope.push(Scope::Caption);
-
-                                self.handle_text(title);
                             }
-                            Err(error) => {
-                                self.handle_text("Cannot open image ");
-                                self.scope.push(Scope::Indent);
+                        } else {
+                            self.scope.push(Scope::Indent);
+                            self.handle_text("[Image");
+                            if !title.is_empty() {
+                                self.handle_text(": ");
+                                self.scope.push(Scope::Caption);
+                                self.handle_text(title);
+                                self.scope.pop();
+                            }
+                            if !destination.is_empty() && !self.opts.hide_urls {
+                                self.handle_text(" <");
                                 self.scope.push(Scope::Link);
                                 self.handle_text(destination);
                                 self.scope.pop();
-                                self.handle_text(&format!(": {}", error));
-                                self.scope.push(Scope::Caption);
-                                self.flush();
+                                self.handle_text(">");
                             }
+                            self.handle_text("]");
+                            self.scope.push(Scope::Caption);
+                            self.flush();
                         }
                     }
                 }
             }
+
             Event::End(tag) => {
                 match tag {
                     Tag::Paragraph => {
@@ -606,9 +628,9 @@ impl<'a> Printer<'a> {
                         self.queue_empty();
                     }
                     Tag::Link(_link_type, destination, title) => {
-                        if !title.is_empty() && !destination.is_empty() {
+                        if !title.is_empty() && !destination.is_empty() && !self.opts.hide_urls {
                             self.handle_text(format!(" <{}: {}>", title, destination));
-                        } else if !destination.is_empty() {
+                        } else if !destination.is_empty() && !self.opts.hide_urls {
                             self.handle_text(format!(" <{}>", destination));
                         } else if !title.is_empty() {
                             self.handle_text(format!(" <{}>", title));

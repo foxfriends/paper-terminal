@@ -121,17 +121,20 @@ USAGE:
     paper [FLAGS] [OPTIONS] [file]...
 
 FLAGS:
-        --dev        Print in debug mode
-        --help       Prints help information
-    -p, --plain      Don't parse as Markdown, just render the plain text on a paper
-    -s, --syncat     Use syncat to highlight code blocks. Requires you have syncat installed.
-    -V, --version    Prints version information
+        --dev          Print in debug mode
+        --help         Prints help information
+    -u, --hide-urls    Hide link URLs
+    -i, --no-images    Disable drawing images
+    -p, --plain        Don't parse as Markdown, just render the plain text on a paper
+    -s, --syncat       Use syncat to highlight code blocks. Requires you have syncat installed.
+    -V, --version      Prints version information
 
 OPTIONS:
-    -h, --h-margin <h-margin>    Horizontal margin
-    -m, --margin <margin>        Margin (shortcut for horizontal and vertical margin the same) [default: 6]
-    -v, --v-margin <v-margin>    Vertical margin
-    -w, --width <width>          The width of the paper (text and margin) [default: 92]
+    -h, --h-margin <h-margin>    Horizontal margin (overrides --margin)
+    -m, --margin <margin>        Margin (shortcut for horizontal and vertical margin set to the same value) [default:
+                                 6]
+    -v, --v-margin <v-margin>    Vertical margin (overrides --margin)
+    -w, --width <width>          The width of the paper (including the space used for the margin) [default: 92]
 
 ARGS:
     <file>...    Files to print

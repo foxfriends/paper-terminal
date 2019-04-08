@@ -17,26 +17,35 @@ use printer::Printer;
 #[derive(StructOpt, Debug)]
 #[structopt(name = "paper")]
 #[structopt(rename_all = "kebab-case")]
+#[structopt(raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
 pub struct Opts {
-    /// Margin (shortcut for horizontal and vertical margin the same)
+    /// Margin (shortcut for horizontal and vertical margin set to the same value)
     #[structopt(short, long, default_value="6")]
     pub margin: usize,
 
-    /// Horizontal margin
+    /// Horizontal margin (overrides --margin)
     #[structopt(short, long)]
     pub h_margin: Option<usize>,
 
-    /// Vertical margin
+    /// Vertical margin (overrides --margin)
     #[structopt(short, long)]
     pub v_margin: Option<usize>,
 
-    /// The width of the paper (text and margin)
+    /// The width of the paper (including the space used for the margin)
     #[structopt(short, long, default_value="92")]
     pub width: usize,
 
     /// Don't parse as Markdown, just render the plain text on a paper
     #[structopt(short, long)]
     pub plain: bool,
+
+    /// Hide link URLs
+    #[structopt(short="u", long)]
+    pub hide_urls: bool,
+
+    /// Disable drawing images
+    #[structopt(short="i", long)]
+    pub no_images: bool,
 
     /// Use syncat to highlight code blocks. Requires you have syncat installed.
     #[structopt(short, long)]
