@@ -1,5 +1,9 @@
 [package]
 name = "paper"
+repository = "https://github.com/oinkiguana/paper"
+homepage = "https://github.com/oinkiguana/paper"
+license = "MIT"
+readme = "README.md"
 version = "0.1.0"
 authors = ["Cameron Eldridge <cameldridge+git@gmail.com>"]
 edition = "2018"
