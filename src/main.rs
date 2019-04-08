@@ -39,6 +39,10 @@ pub struct Opts {
     #[structopt(short, long)]
     pub plain: bool,
 
+    /// The length to consider tabs as.
+    #[structopt(short, long, default_value="8")]
+    pub tab_length: usize,
+
     /// Hide link URLs
     #[structopt(short="u", long)]
     pub hide_urls: bool,
@@ -58,6 +62,17 @@ pub struct Opts {
     /// Files to print
     #[structopt(name="FILE", parse(from_os_str))]
     pub files: Vec<PathBuf>,
+}
+
+fn normalize_tabs(tab_len: usize, source: &str) -> String {
+    source
+        .lines()
+        .map(|line| {
+            // TODO: normalize the tabs
+            line
+        })
+        .map(|line| format!("{}\n", line))
+        .collect::<String>()
 }
 
 fn print<I>(opts: Opts, sources: I) where I: Iterator<Item=Result<String, std::io::Error>> {
@@ -84,7 +99,7 @@ fn print<I>(opts: Opts, sources: I) where I: Iterator<Item=Result<String, std::i
     let margin = format!("{}", paper_style.paint(" ".repeat(h_margin)));
     for source in sources {
         let source = match source {
-            Ok(source) => source,
+            Ok(source) => normalize_tabs(opts.tab_length, &source),
             Err(error) => {
                 println!("{}", error);
                 continue;
