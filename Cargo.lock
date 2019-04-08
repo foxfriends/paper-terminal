@@ -717,7 +717,7 @@ dependencies = [
 [[package]]
 name = "syncat-stylesheet"
 version = "0.1.0"
-source = "git+https://github.com/oinkiguana/syncat.git#5b31bac7c2b8436aa37b994095e0c97b695a42d0"
+source = "git+https://github.com/oinkiguana/syncat.git#70dfb687c295eadc3db8d9824e6c5d0dfcc313e1"
 dependencies = [
  "ansi_term 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cc 1.0.34 (registry+https://github.com/rust-lang/crates.io-index)",

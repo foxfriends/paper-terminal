@@ -3,7 +3,7 @@ use std::io::{self, Read};
 use std::fs::{self, File};
 use structopt::StructOpt;
 use terminal_size::{Width, terminal_size};
-use pulldown_cmark::{Parser, Options, Event};
+use pulldown_cmark::{Parser, Options};
 use syncat_stylesheet::Stylesheet;
 
 mod dirs;
