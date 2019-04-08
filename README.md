@@ -1,4 +1,5 @@
 [syncat]: https://github.com/oinkiguana/syncat
+[syncat stylesheets]: https://github.com/oinkiguana/syncat-themes
 [oinkiguana/paper]: https://github.com/oinkiguana/paper
 [ttscoff/mdless]: https://github.com/ttscoff/mdless
 [lunaryorn/mdcat]: https://github.com/lunaryorn/mdcat
@@ -62,9 +63,9 @@ Not a very good comparison... this is more of an example of a table!
 ## Styling
 
 Paper uses [syncat stylesheets][] to allow full customization of styling. See the default stylesheet (`src/default.syncat`)
-as an example of how this works.
+as an example of how this works. To override the default styles, create `md.syncat` in your active syncat theme.
 
-*   Different scopes are represented as kinds, inspired by the corresponding HTML tag names.
+*   Different scopes are represented as nodes, inspired by the corresponding HTML tag names.
 
     *   `h1` through `h6`
     *   `strong`
