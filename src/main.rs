@@ -69,7 +69,23 @@ fn normalize_tabs(tab_len: usize, source: &str) -> String {
         .lines()
         .map(|line| {
             // TODO: normalize the tabs
-            line
+            let mut len = 0;
+            if line.contains('\t') {
+                line.chars()
+                    .flat_map(|ch| {
+                        if ch == '\t' {
+                            let missing = tab_len - (len % tab_len);
+                            len += missing;
+                            vec![' '; missing]
+                        } else {
+                            len += 1;
+                            vec![ch]
+                        }
+                    })
+                    .collect::<String>()
+            } else {
+                line.to_string()
+            }
         })
         .map(|line| format!("{}\n", line))
         .collect::<String>()
