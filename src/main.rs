@@ -3,6 +3,7 @@ use std::io::{self, Read};
 use std::fs::{self, File};
 use structopt::StructOpt;
 use terminal_size::{Width, terminal_size};
+use console::strip_ansi_codes;
 use pulldown_cmark::{Parser, Options};
 use syncat_stylesheet::Stylesheet;
 
@@ -12,6 +13,7 @@ mod table;
 mod words;
 
 use printer::Printer;
+use words::Words;
 
 /// Prints papers in your terminal
 #[derive(StructOpt, Debug)]
@@ -64,12 +66,12 @@ pub struct Opts {
     pub files: Vec<PathBuf>,
 }
 
-fn normalize_tabs(tab_len: usize, source: &str) -> String {
+fn normalize(tab_len: usize, source: &str) -> String {
     source
         .lines()
         .map(|line| {
-            // TODO: normalize the tabs
             let mut len = 0;
+            let line = strip_ansi_codes(line);
             if line.contains('\t') {
                 line.chars()
                     .flat_map(|ch| {
@@ -83,8 +85,9 @@ fn normalize_tabs(tab_len: usize, source: &str) -> String {
                         }
                     })
                     .collect::<String>()
+                    .into()
             } else {
-                line.to_string()
+                line
             }
         })
         .map(|line| format!("{}\n", line))
@@ -113,9 +116,10 @@ fn print<I>(opts: Opts, sources: I) where I: Iterator<Item=Result<String, std::i
     let blank_line = format!("{}", paper_style.paint(" ".repeat(width)));
     let end_shadow = format!("{}", shadow_style.paint(" "));
     let margin = format!("{}", paper_style.paint(" ".repeat(h_margin)));
+    let available_width = width - 2 * h_margin;
     for source in sources {
         let source = match source {
-            Ok(source) => normalize_tabs(opts.tab_length, &source),
+            Ok(source) => normalize(opts.tab_length, &source),
             Err(error) => {
                 println!("{}", error);
                 continue;
@@ -128,17 +132,36 @@ fn print<I>(opts: Opts, sources: I) where I: Iterator<Item=Result<String, std::i
             }
 
             for line in source.lines() {
+                let mut buffer = String::new();
+                for word in Words::preserving_whitespace(line) {
+                    if buffer.chars().count() + word.chars().count() > available_width {
+                        println!(
+                            "{}{}{}{}{}{}",
+                            centering,
+                            margin,
+                            paper_style.paint(&buffer),
+                            paper_style.paint(" ".repeat(available_width - buffer.chars().count())),
+                            margin,
+                            shadow_style.paint(" "),
+                        );
+                        buffer.clear();
+                    }
+                    if buffer.is_empty() {
+                        buffer.push_str(word.trim());
+                    } else {
+                        buffer.push_str(&word);
+                    }
+                }
                 println!(
                     "{}{}{}{}{}{}",
                     centering,
                     margin,
-                    paper_style.paint(line),
-                    paper_style.paint(" ".repeat((width - 2 * h_margin).saturating_sub(line.chars().count()))),
+                    paper_style.paint(&buffer),
+                    paper_style.paint(" ".repeat(available_width - buffer.chars().count())),
                     margin,
-                    end_shadow,
+                    shadow_style.paint(" "),
                 );
             }
-
             for _ in 0..v_margin {
                 println!("{}{}{}", centering, blank_line, end_shadow);
             }
@@ -155,7 +178,7 @@ fn print<I>(opts: Opts, sources: I) where I: Iterator<Item=Result<String, std::i
                 println!("{}{}{}", centering, blank_line, end_shadow);
             }
 
-            let mut printer = Printer::new(&centering, &margin, width - 2 * h_margin, &stylesheet, &opts);
+            let mut printer = Printer::new(&centering, &margin, available_width, &stylesheet, &opts);
             for event in parser {
                 printer.handle(event);
             }

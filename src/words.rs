@@ -2,6 +2,7 @@ pub struct Words<S: AsRef<str>> {
     source: S,
     position: usize,
     previous: usize,
+    preserve_whitespace: bool,
 }
 
 impl<S: AsRef<str>> Words<S> {
@@ -10,6 +11,16 @@ impl<S: AsRef<str>> Words<S> {
             source,
             previous: 0,
             position: 0,
+            preserve_whitespace: false,
+        }
+    }
+
+    pub fn preserving_whitespace(source: S) -> Self {
+        Self {
+            source,
+            previous: 0,
+            position: 0,
+            preserve_whitespace: true,
         }
     }
 }
@@ -34,6 +45,8 @@ impl<S: AsRef<str>> Iterator for Words<S> {
         if start == chars.len() {
             if chars.len() == 0 {
                 return None
+            } else if self.preserve_whitespace {
+                return Some(chars[..].into_iter().collect())
             } else {
                 return Some(" ".to_string())
             }
@@ -51,9 +64,13 @@ impl<S: AsRef<str>> Iterator for Words<S> {
         }
         self.position += len;
         if chars[0].is_whitespace() {
-            return Some(String::from(" ") + &chars[start..start+len].iter().collect::<String>())
+            if self.preserve_whitespace {
+                return Some(chars[0..start+len].into_iter().collect::<String>())
+            } else {
+                return Some(String::from(" ") + &chars[start..start+len].into_iter().collect::<String>())
+            }
         } else {
-            return Some(chars[start..start+len].iter().collect::<String>())
+            return Some(chars[start..start+len].into_iter().collect::<String>())
         }
     }
 }
