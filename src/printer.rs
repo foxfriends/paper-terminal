@@ -366,7 +366,7 @@ impl<'a> Printer<'a> {
                     self.centering,
                     self.margin,
                     prefix,
-                    format!("{}{}", " ".repeat(available_width - lang.chars().count()), self.style2(Some("lang-tag")).paint(lang)),
+                    format!("{}{}", style.paint(" ".repeat(available_width - lang.chars().count())), self.style2(Some("lang-tag")).paint(lang)),
                     suffix,
                     self.margin,
                     self.shadow(),
