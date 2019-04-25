@@ -3,7 +3,7 @@ use std::io::{Read as _, Write as _};
 use ansi_term::Style;
 use pulldown_cmark::{Alignment, Event, Tag};
 use image::{self, GenericImageView as _};
-use console::measure_text_width;
+use console::{measure_text_width, AnsiCodeIterator};
 use syncat_stylesheet::Stylesheet;
 use termpix;
 use crate::words::Words;
@@ -180,9 +180,7 @@ impl<'a> Printer<'a> {
                 let style = stylesheet.resolve_basic(&scopes[..], Some("prefix")).build();
                 Some((format!("{}", style.paint(&prefix)), prefix.chars().count()))
             })
-            .fold((String::new(), 0), |(s, c), (s2, c2)| {
-                (s + &s2, c + c2)
-            })
+            .fold((String::new(), 0), |(s, c), (s2, c2)| (s + &s2, c + c2))
     }
 
     fn suffix(&mut self) -> (String, usize) {
@@ -195,9 +193,7 @@ impl<'a> Printer<'a> {
                 let style = stylesheet.resolve_basic(&scopes[..], Some("suffix")).build();
                 Some((format!("{}", style.paint(&suffix)), suffix.chars().count()))
             })
-            .fold((String::new(), 0), |(s, c), (s2, c2)| {
-                (s2 + &s, c + c2)
-            })
+            .fold((String::new(), 0), |(s, c), (s2, c2)| (s2 + &s, c + c2))
     }
 
     fn style2(&self, token: Option<&str>) -> Style {
@@ -343,14 +339,30 @@ impl<'a> Printer<'a> {
                 );
 
                 for line in buffer.lines() {
+                    let width = measure_text_width(line);
                     let (prefix, _) = self.prefix();
                     let (suffix, _) = self.suffix();
-                    println!(
-                        "{}{}{}{}{}{}{}",
+                    print!(
+                        "{}{}{}{}",
                         self.centering,
                         self.margin,
                         prefix,
-                        style.paint(line),
+                        style.prefix(),
+                    );
+                    for (s, is_ansi) in AnsiCodeIterator::new(line) {
+                        if is_ansi {
+                            if s == "\u{1b}[0m" {
+                                print!("{}{}", s, style.prefix());
+                            } else {
+                                print!("{}{}", style.prefix(), s);
+                            }
+                        } else {
+                            print!("{}", s);
+                        }
+                    }
+                    println!(
+                        "{}{}{}{}",
+                        style.paint(" ".repeat(available_width - width)),
                         suffix,
                         self.margin,
                         self.shadow(),
