@@ -70,12 +70,8 @@ impl Scope {
             }
             Scope::CodeBlock(..) => "  ".to_string(),
             Scope::BlockQuote => "│   ".to_string(),
-            Scope::Heading(1) => "    ".to_string(),
             Scope::Heading(2) => "├─── ".to_string(),
-            Scope::Heading(3) => "    ".to_string(),
-            Scope::Heading(4) => "    ".to_string(),
-            Scope::Heading(5) => "    ".to_string(),
-            Scope::Heading(6) => "    ".to_string(),
+            Scope::Heading(..) => "    ".to_string(),
             _ => String::new(),
         }
     }
@@ -84,6 +80,7 @@ impl Scope {
         match self {
             Scope::CodeBlock(..) => 2,
             Scope::Heading(2) => 5,
+            Scope::Heading(..) => 4,
             _ => 0
         }
     }
@@ -92,6 +89,7 @@ impl Scope {
         match self {
             Scope::CodeBlock(..) => "  ".to_string(),
             Scope::Heading(2) => " ───┤".to_string(),
+            Scope::Heading(..) => "    ".to_string(),
             _ => String::new(),
         }
     }
