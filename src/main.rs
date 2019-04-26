@@ -42,7 +42,7 @@ pub struct Opts {
     pub plain: bool,
 
     /// The length to consider tabs as.
-    #[structopt(short, long, default_value="8")]
+    #[structopt(short, long, default_value="4")]
     pub tab_length: usize,
 
     /// Hide link URLs
