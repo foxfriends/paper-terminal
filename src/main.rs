@@ -133,6 +133,7 @@ fn print<I>(opts: Opts, sources: I) where I: Iterator<Item=Result<String, std::i
 
             for line in source.lines() {
                 let mut buffer = String::new();
+                let mut indent = None;
                 for word in Words::preserving_whitespace(line) {
                     if buffer.chars().count() + word.chars().count() > available_width {
                         println!(
@@ -147,6 +148,11 @@ fn print<I>(opts: Opts, sources: I) where I: Iterator<Item=Result<String, std::i
                         buffer.clear();
                     }
                     if buffer.is_empty() {
+                        if indent.is_none() {
+                            let indent_len = word.chars().take_while(|ch| ch.is_whitespace()).count();
+                            indent = Some(word[0..indent_len].to_string());
+                        }
+                        buffer.push_str(indent.as_ref().unwrap());
                         buffer.push_str(word.trim());
                     } else {
                         buffer.push_str(&word);
