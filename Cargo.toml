@@ -1,5 +1,8 @@
 [package]
 name = "paper"
+description = """
+Writes a file to a paper in your terminal. Especially if that file is Markdown.
+"""
 repository = "https://github.com/oinkiguana/paper"
 homepage = "https://github.com/oinkiguana/paper"
 license = "MIT"
