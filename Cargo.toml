@@ -13,7 +13,6 @@ structopt = "0.2"
 terminal_size = "0.1"
 pulldown-cmark = "0.4"
 ansi_term = "0.11"
-termpix = { git = "https://github.com/oinkiguana/termpix.git" }
 image = "0.21"
 console = "0.7"
 directories = "1.0"

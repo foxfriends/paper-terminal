@@ -5,7 +5,7 @@ use pulldown_cmark::{Alignment, Event, Tag};
 use image::{self, GenericImageView as _};
 use console::{measure_text_width, AnsiCodeIterator};
 use syncat_stylesheet::Stylesheet;
-use termpix;
+use crate::termpix;
 use crate::words::Words;
 use crate::table::Table;
 

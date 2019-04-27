@@ -11,6 +11,7 @@ mod dirs;
 mod printer;
 mod table;
 mod words;
+mod termpix;
 
 use printer::Printer;
 use words::Words;
