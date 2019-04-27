@@ -91,12 +91,10 @@ For now, the prefix/suffix contents are not customizable, but this may be added 
 
 ## Installation
 
-This is not yet published to crates.io, so you will have to install from source:
+Paper can be installed from crates.io using Cargo:
 
 ```bash
-git clone https://github.com/oinkiguana/paper-terminal
-cd paper-terminal
-cargo install --path .
+cargo install paper-terminal
 ```
 
 ## Usage
