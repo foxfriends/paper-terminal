@@ -1,5 +1,5 @@
 [package]
-name = "paper"
+name = "paper-terminal"
 description = """
 Writes a file to a paper in your terminal. Especially if that file is Markdown.
 """
@@ -10,6 +10,10 @@ readme = "README.md"
 version = "0.1.0"
 authors = ["Cameron Eldridge <cameldridge+git@gmail.com>"]
 edition = "2018"
+
+[[bin]]
+name = "paper"
+path = "src/main.rs"
 
 [dependencies]
 structopt = "0.2"
