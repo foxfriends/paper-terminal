@@ -88,7 +88,7 @@ impl Table {
             )
             .fold(title_chars.clone(), |mut chars, row| {
                 for i in 0..row.len() {
-                    chars[i] = usize::max(chars[i], row[i]);
+                    chars[i] = usize::max(1, usize::max(chars[i], row[i]));
                 }
                 chars
             });
