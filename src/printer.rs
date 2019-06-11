@@ -171,34 +171,53 @@ impl<'a> Printer<'a> {
     }
 
     fn prefix(&mut self) -> (String, usize) {
+        self.prefix2(None)
+    }
+
+    fn prefix2(&mut self, extra_scopes: Option<&[&str]>) -> (String, usize) {
         let stylesheet = self.stylesheet;
         self.scope
             .iter_mut()
             .scan(vec![], |scopes, scope| {
                 scopes.push(scope.name());
                 let prefix = scope.prefix();
-                let style = stylesheet.resolve_basic(&scopes[..], Some("prefix")).build();
+                let mut all_scopes = scopes.clone();
+                all_scopes.append(&mut extra_scopes.unwrap_or(&[]).to_vec());
+                let style = stylesheet.resolve_basic(&all_scopes[..], Some("prefix")).build();
                 Some((format!("{}", style.paint(&prefix)), prefix.chars().count()))
             })
             .fold((String::new(), 0), |(s, c), (s2, c2)| (s + &s2, c + c2))
     }
 
     fn suffix(&mut self) -> (String, usize) {
+        self.suffix2(None)
+    }
+
+    fn suffix2(&mut self, extra_scopes: Option<&[&str]>) -> (String, usize) {
         let stylesheet = self.stylesheet;
         self.scope
             .iter_mut()
             .scan(vec![], |scopes, scope| {
                 scopes.push(scope.name());
                 let suffix = scope.suffix();
-                let style = stylesheet.resolve_basic(&scopes[..], Some("suffix")).build();
+                let mut all_scopes = scopes.clone();
+                all_scopes.append(&mut extra_scopes.unwrap_or(&[]).to_vec());
+                let style = stylesheet.resolve_basic(&all_scopes[..], Some("suffix")).build();
                 Some((format!("{}", style.paint(&suffix)), suffix.chars().count()))
             })
             .fold((String::new(), 0), |(s, c), (s2, c2)| (s2 + &s, c + c2))
     }
 
-    fn style2(&self, token: Option<&str>) -> Style {
-        let scope_names: Vec<_> = self.scope.iter().map(Scope::name).collect();
+    fn style3(&self, extra_scopes: Option<&[&str]>, token: Option<&str>) -> Style {
+        let mut scope_names: Vec<_> = self.scope.iter().map(Scope::name).collect();
+        if let Some(extras) = extra_scopes {
+            scope_names.append(&mut extras.to_vec());
+        }
         self.stylesheet.resolve_basic(&scope_names, token).build()
+    }
+
+    fn style2(&self, token: Option<&str>) -> Style {
+        self.style3(None, token)
     }
 
     fn style(&self) -> Style {
@@ -276,14 +295,15 @@ impl<'a> Printer<'a> {
     fn flush_buffer(&mut self) {
         match self.scope.last() {
             Some(Scope::CodeBlock(lang)) => {
-                let style = if lang.is_empty() || !self.opts.syncat {
-                    self.style2(Some("txt"))
+                let language_context = if lang.is_empty() || !self.opts.syncat {
+                    String::from("txt")
                 } else {
-                    self.style2(Some(lang))
+                    lang.to_string()
                 };
+                let style = self.style3(Some(&[&language_context[..]]), None);
                 let lang = lang.to_string();
-                let mut first_prefix = Some(self.prefix());
-                let mut first_suffix = Some(self.suffix());
+                let mut first_prefix = Some(self.prefix2(Some(&[&language_context[..]])));
+                let mut first_suffix = Some(self.suffix2(Some(&[&language_context[..]])));
 
                 let available_width = self.width
                     - first_prefix.as_ref().unwrap().1
@@ -325,8 +345,8 @@ impl<'a> Printer<'a> {
                         .collect()
                 };
 
-                let (prefix, _) = first_prefix.take().unwrap_or_else(|| self.prefix());
-                let (suffix, _) = first_suffix.take().unwrap_or_else(|| self.suffix());
+                let (prefix, _) = first_prefix.take().unwrap_or_else(|| self.prefix2(Some(&[&language_context[..]])));
+                let (suffix, _) = first_suffix.take().unwrap_or_else(|| self.suffix2(Some(&[&language_context[..]])));
                 println!(
                     "{}{}{}{}{}{}{}",
                     self.centering,
@@ -340,8 +360,8 @@ impl<'a> Printer<'a> {
 
                 for line in buffer.lines() {
                     let width = measure_text_width(line);
-                    let (prefix, _) = self.prefix();
-                    let (suffix, _) = self.suffix();
+                    let (prefix, _) = self.prefix2(Some(&[&language_context[..]]));
+                    let (suffix, _) = self.suffix2(Some(&[&language_context[..]]));
                     print!(
                         "{}{}{}{}",
                         self.centering,
@@ -369,14 +389,17 @@ impl<'a> Printer<'a> {
                     );
                 }
 
-                let (prefix, _) = first_prefix.take().unwrap_or_else(|| self.prefix());
-                let (suffix, _) = first_suffix.take().unwrap_or_else(|| self.suffix());
+                let (prefix, _) = first_prefix.take().unwrap_or_else(|| self.prefix2(Some(&[&language_context[..]])));
+                let (suffix, _) = first_suffix.take().unwrap_or_else(|| self.suffix2(Some(&[&language_context[..]])));
                 println!(
                     "{}{}{}{}{}{}{}",
                     self.centering,
                     self.margin,
                     prefix,
-                    format!("{}{}", style.paint(" ".repeat(available_width - lang.chars().count())), self.style2(Some("lang-tag")).paint(lang)),
+                    format!("{}{}", 
+                        style.paint(" ".repeat(available_width - lang.chars().count())), 
+                        self.style3(Some(&[&language_context[..]]), Some("lang-tag")).paint(lang)
+                    ),
                     suffix,
                     self.margin,
                     self.shadow(),
@@ -482,8 +505,8 @@ impl<'a> Printer<'a> {
                     }
                     Tag::Item => {
                         self.flush();
-                        if let Some(Scope::List(index)) = self.scope.last() {
-                            self.scope.push(Scope::ListItem(*index, false));
+                        if let Some(&Scope::List(index)) = self.scope.last() {
+                            self.scope.push(Scope::ListItem(index, false));
                         } else {
                             self.scope.push(Scope::ListItem(None, false));
                         }
