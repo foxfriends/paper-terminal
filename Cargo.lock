@@ -355,7 +355,7 @@ dependencies = [
 
 [[package]]
 name = "paper-terminal"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "ansi_term 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "console 0.7.5 (registry+https://github.com/rust-lang/crates.io-index)",
