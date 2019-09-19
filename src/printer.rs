@@ -695,7 +695,7 @@ impl<'a> Printer<'a> {
             Event::SoftBreak => { self.handle_text(" "); }
             Event::HardBreak => { self.flush(); }
             Event::TaskListMarker(checked) => {
-                self.handle_text(if checked { "[ ] " } else { "[✓] " });
+                self.handle_text(if checked { "[✓] " } else { "[ ] " });
             }
         }
     }
