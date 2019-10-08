@@ -1,17 +1,17 @@
-use std::path::PathBuf;
-use std::io::{self, Read};
-use std::fs::{self, File};
-use structopt::StructOpt;
-use terminal_size::{Width, terminal_size};
 use console::strip_ansi_codes;
-use pulldown_cmark::{Parser, Options};
+use pulldown_cmark::{Options, Parser};
+use std::fs::{self, File};
+use std::io::{self, Read};
+use std::path::PathBuf;
+use structopt::StructOpt;
 use syncat_stylesheet::Stylesheet;
+use terminal_size::{terminal_size, Width};
 
 mod dirs;
 mod printer;
 mod table;
-mod words;
 mod termpix;
+mod words;
 
 use printer::Printer;
 use words::Words;
@@ -23,7 +23,7 @@ use words::Words;
 #[structopt(raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
 pub struct Opts {
     /// Margin (shortcut for horizontal and vertical margin set to the same value)
-    #[structopt(short, long, default_value="6")]
+    #[structopt(short, long, default_value = "6")]
     pub margin: usize,
 
     /// Horizontal margin (overrides --margin)
@@ -35,7 +35,7 @@ pub struct Opts {
     pub v_margin: Option<usize>,
 
     /// The width of the paper (including the space used for the margin)
-    #[structopt(short, long, default_value="92")]
+    #[structopt(short, long, default_value = "92")]
     pub width: usize,
 
     /// Don't parse as Markdown, just render the plain text on a paper
@@ -43,15 +43,15 @@ pub struct Opts {
     pub plain: bool,
 
     /// The length to consider tabs as.
-    #[structopt(short, long, default_value="4")]
+    #[structopt(short, long, default_value = "4")]
     pub tab_length: usize,
 
     /// Hide link URLs
-    #[structopt(short="u", long)]
+    #[structopt(short = "u", long)]
     pub hide_urls: bool,
 
     /// Disable drawing images
-    #[structopt(short="i", long)]
+    #[structopt(short = "i", long)]
     pub no_images: bool,
 
     /// Use syncat to highlight code blocks. Requires you have syncat installed.
@@ -63,7 +63,7 @@ pub struct Opts {
     pub dev: bool,
 
     /// Files to print
-    #[structopt(name="FILE", parse(from_os_str))]
+    #[structopt(name = "FILE", parse(from_os_str))]
     pub files: Vec<PathBuf>,
 }
 
@@ -95,10 +95,15 @@ fn normalize(tab_len: usize, source: &str) -> String {
         .collect::<String>()
 }
 
-fn print<I>(opts: Opts, sources: I) where I: Iterator<Item=Result<String, std::io::Error>> {
+fn print<I>(opts: Opts, sources: I)
+where
+    I: Iterator<Item = Result<String, std::io::Error>>,
+{
     let h_margin = opts.h_margin.unwrap_or(opts.margin);
     let v_margin = opts.v_margin.unwrap_or(opts.margin);
-    let terminal_width = terminal_size().map(|(Width(width), _)| width).unwrap_or(opts.width as u16) as usize;
+    let terminal_width = terminal_size()
+        .map(|(Width(width), _)| width)
+        .unwrap_or(opts.width as u16) as usize;
     let width = usize::min(opts.width, terminal_width - 1);
 
     if width < h_margin * 2 + 40 {
@@ -111,7 +116,11 @@ fn print<I>(opts: Opts, sources: I) where I: Iterator<Item=Result<String, std::i
     let stylesheet = File::open(dirs::syncat_config().join("style/active/md.syncat"))
         .map_err(Into::into)
         .and_then(|mut file| Stylesheet::from_reader(&mut file))
-        .unwrap_or_else(|_| include_str!("default.syncat").parse::<Stylesheet>().unwrap());
+        .unwrap_or_else(|_| {
+            include_str!("default.syncat")
+                .parse::<Stylesheet>()
+                .unwrap()
+        });
     let paper_style = stylesheet.resolve_basic(&["paper"], None).build();
     let shadow_style = stylesheet.resolve_basic(&["shadow"], None).build();
     let blank_line = format!("{}", paper_style.paint(" ".repeat(width)));
@@ -150,7 +159,8 @@ fn print<I>(opts: Opts, sources: I) where I: Iterator<Item=Result<String, std::i
                     }
                     if buffer.is_empty() {
                         if indent.is_none() {
-                            let indent_len = word.chars().take_while(|ch| ch.is_whitespace()).count();
+                            let indent_len =
+                                word.chars().take_while(|ch| ch.is_whitespace()).count();
                             indent = Some(word[0..indent_len].to_string());
                         }
                         buffer.push_str(indent.as_ref().unwrap());
@@ -185,7 +195,8 @@ fn print<I>(opts: Opts, sources: I) where I: Iterator<Item=Result<String, std::i
                 println!("{}{}{}", centering, blank_line, end_shadow);
             }
 
-            let mut printer = Printer::new(&centering, &margin, available_width, &stylesheet, &opts);
+            let mut printer =
+                Printer::new(&centering, &margin, available_width, &stylesheet, &opts);
             for event in parser {
                 printer.handle(event);
             }
@@ -206,10 +217,11 @@ fn main() {
         io::stdin().read_to_string(&mut string).unwrap();
         print(opts, vec![Ok(string)].into_iter());
     } else {
-        let sources = opts.files.clone()
+        let sources = opts
+            .files
+            .clone()
             .into_iter()
-            .map(|path| fs::read_to_string(&path),
-        );
+            .map(|path| fs::read_to_string(&path));
         print(opts, sources);
     }
 }

@@ -1,13 +1,13 @@
-use std::process::{Command, Stdio};
-use std::io::{Read as _, Write as _};
-use ansi_term::Style;
-use pulldown_cmark::{Alignment, Event, Tag};
-use image::{self, GenericImageView as _};
-use console::{measure_text_width, AnsiCodeIterator};
-use syncat_stylesheet::Stylesheet;
+use crate::table::Table;
 use crate::termpix;
 use crate::words::Words;
-use crate::table::Table;
+use ansi_term::Style;
+use console::{measure_text_width, AnsiCodeIterator};
+use image::{self, GenericImageView as _};
+use pulldown_cmark::{Alignment, Event, Tag};
+use std::io::{Read as _, Write as _};
+use std::process::{Command, Stdio};
+use syncat_stylesheet::Stylesheet;
 
 #[derive(Debug, PartialEq)]
 enum Scope {
@@ -44,7 +44,7 @@ impl Scope {
             Scope::BlockQuote => 4,
             Scope::Heading(2) => 5,
             Scope::Heading(..) => 4,
-            _ => 0
+            _ => 0,
         }
     }
 
@@ -81,7 +81,7 @@ impl Scope {
             Scope::CodeBlock(..) => 2,
             Scope::Heading(2) => 5,
             Scope::Heading(..) => 4,
-            _ => 0
+            _ => 0,
         }
     }
 
@@ -143,7 +143,13 @@ pub struct Printer<'a> {
 }
 
 impl<'a> Printer<'a> {
-    pub fn new(centering: &'a str, margin: &'a str, width: usize, stylesheet: &'a Stylesheet, opts: &'a crate::Opts) -> Printer<'a> {
+    pub fn new(
+        centering: &'a str,
+        margin: &'a str,
+        width: usize,
+        stylesheet: &'a Stylesheet,
+        opts: &'a crate::Opts,
+    ) -> Printer<'a> {
         Printer {
             centering,
             margin,
@@ -183,7 +189,9 @@ impl<'a> Printer<'a> {
                 let prefix = scope.prefix();
                 let mut all_scopes = scopes.clone();
                 all_scopes.append(&mut extra_scopes.unwrap_or(&[]).to_vec());
-                let style = stylesheet.resolve_basic(&all_scopes[..], Some("prefix")).build();
+                let style = stylesheet
+                    .resolve_basic(&all_scopes[..], Some("prefix"))
+                    .build();
                 Some((format!("{}", style.paint(&prefix)), prefix.chars().count()))
             })
             .fold((String::new(), 0), |(s, c), (s2, c2)| (s + &s2, c + c2))
@@ -202,7 +210,9 @@ impl<'a> Printer<'a> {
                 let suffix = scope.suffix();
                 let mut all_scopes = scopes.clone();
                 all_scopes.append(&mut extra_scopes.unwrap_or(&[]).to_vec());
-                let style = stylesheet.resolve_basic(&all_scopes[..], Some("suffix")).build();
+                let style = stylesheet
+                    .resolve_basic(&all_scopes[..], Some("suffix"))
+                    .build();
                 Some((format!("{}", style.paint(&suffix)), suffix.chars().count()))
             })
             .fold((String::new(), 0), |(s, c), (s2, c2)| (s2 + &s, c + c2))
@@ -225,7 +235,13 @@ impl<'a> Printer<'a> {
     }
 
     fn shadow(&self) -> String {
-        format!("{}", self.stylesheet.resolve_basic(&["shadow"], None).build().paint(" "))
+        format!(
+            "{}",
+            self.stylesheet
+                .resolve_basic(&["shadow"], None)
+                .build()
+                .paint(" ")
+        )
     }
 
     fn paper_style(&self) -> Style {
@@ -244,7 +260,8 @@ impl<'a> Printer<'a> {
             self.centering,
             self.margin,
             prefix,
-            self.paper_style().paint(" ".repeat(self.width - prefix_len - suffix_len)),
+            self.paper_style()
+                .paint(" ".repeat(self.width - prefix_len - suffix_len)),
             suffix,
             self.margin,
             self.shadow(),
@@ -260,7 +277,8 @@ impl<'a> Printer<'a> {
             self.centering,
             self.margin,
             prefix,
-            self.style().paint("─".repeat(self.width - prefix_len - suffix_len)),
+            self.style()
+                .paint("─".repeat(self.width - prefix_len - suffix_len)),
             suffix,
             self.margin,
             self.shadow(),
@@ -270,11 +288,13 @@ impl<'a> Printer<'a> {
     fn print_table(&mut self) {
         let alignments = if let Some(Scope::Table(alignments)) = self.scope.last() {
             alignments
-        } else { return };
+        } else {
+            return;
+        };
         let (heading, rows) = std::mem::replace(&mut self.table, (vec![], vec![]));
         let available_width = self.width - self.prefix_len() - self.suffix_len();
-        let table_str = Table::new(heading, rows, available_width)
-            .print(self.paper_style(), alignments);
+        let table_str =
+            Table::new(heading, rows, available_width).print(self.paper_style(), alignments);
         for line in table_str.lines() {
             let (prefix, _) = self.prefix();
             let (suffix, _) = self.suffix();
@@ -284,7 +304,8 @@ impl<'a> Printer<'a> {
                 self.margin,
                 line,
                 prefix,
-                self.paper_style().paint(" ".repeat(available_width - measure_text_width(line))),
+                self.paper_style()
+                    .paint(" ".repeat(available_width - measure_text_width(line))),
                 suffix,
                 self.margin,
                 self.shadow(),
@@ -340,13 +361,22 @@ impl<'a> Printer<'a> {
                                 output = format!("{}{}\n", output, prefix);
                                 line = &line[prefix.len()..];
                             }
-                            format!("{}{}{}\n", output, line, " ".repeat(available_width - line.chars().count()))
+                            format!(
+                                "{}{}{}\n",
+                                output,
+                                line,
+                                " ".repeat(available_width - line.chars().count())
+                            )
                         })
                         .collect()
                 };
 
-                let (prefix, _) = first_prefix.take().unwrap_or_else(|| self.prefix2(Some(&[&language_context[..]])));
-                let (suffix, _) = first_suffix.take().unwrap_or_else(|| self.suffix2(Some(&[&language_context[..]])));
+                let (prefix, _) = first_prefix
+                    .take()
+                    .unwrap_or_else(|| self.prefix2(Some(&[&language_context[..]])));
+                let (suffix, _) = first_suffix
+                    .take()
+                    .unwrap_or_else(|| self.suffix2(Some(&[&language_context[..]])));
                 println!(
                     "{}{}{}{}{}{}{}",
                     self.centering,
@@ -389,22 +419,27 @@ impl<'a> Printer<'a> {
                     );
                 }
 
-                let (prefix, _) = first_prefix.take().unwrap_or_else(|| self.prefix2(Some(&[&language_context[..]])));
-                let (suffix, _) = first_suffix.take().unwrap_or_else(|| self.suffix2(Some(&[&language_context[..]])));
+                let (prefix, _) = first_prefix
+                    .take()
+                    .unwrap_or_else(|| self.prefix2(Some(&[&language_context[..]])));
+                let (suffix, _) = first_suffix
+                    .take()
+                    .unwrap_or_else(|| self.suffix2(Some(&[&language_context[..]])));
                 println!(
                     "{}{}{}{}{}{}{}",
                     self.centering,
                     self.margin,
                     prefix,
-                    format!("{}{}", 
-                        style.paint(" ".repeat(available_width - lang.chars().count())), 
-                        self.style3(Some(&[&language_context[..]]), Some("lang-tag")).paint(lang)
+                    format!(
+                        "{}{}",
+                        style.paint(" ".repeat(available_width - lang.chars().count())),
+                        self.style3(Some(&[&language_context[..]]), Some("lang-tag"))
+                            .paint(lang)
                     ),
                     suffix,
                     self.margin,
                     self.shadow(),
                 );
-
             }
             _ => {}
         }
@@ -414,10 +449,23 @@ impl<'a> Printer<'a> {
         if !self.buffer.is_empty() {
             return;
         }
-        if self.scope.iter().find(|scope| if let Scope::Table(..) = scope { true } else { false }).is_some() {
+        if self
+            .scope
+            .iter()
+            .find(|scope| {
+                if let Scope::Table(..) = scope {
+                    true
+                } else {
+                    false
+                }
+            })
+            .is_some()
+        {
             return;
         }
-        if self.content.is_empty() { return }
+        if self.content.is_empty() {
+            return;
+        }
         let (prefix, prefix_len) = self.prefix();
         let (suffix, suffix_len) = self.suffix();
         println!(
@@ -427,7 +475,11 @@ impl<'a> Printer<'a> {
             prefix,
             self.content,
             suffix,
-            self.paper_style().paint(" ".repeat(self.width - measure_text_width(&self.content) - prefix_len - suffix_len)),
+            self.paper_style().paint(
+                " ".repeat(
+                    self.width - measure_text_width(&self.content) - prefix_len - suffix_len
+                )
+            ),
             self.margin,
             self.shadow(),
         );
@@ -435,16 +487,29 @@ impl<'a> Printer<'a> {
     }
 
     fn target(&mut self) -> &mut String {
-        if self.scope.iter().find(|scope| *scope == &Scope::TableHead).is_some() {
+        if self
+            .scope
+            .iter()
+            .find(|scope| *scope == &Scope::TableHead)
+            .is_some()
+        {
             self.table.0.last_mut().unwrap()
-        } else if self.scope.iter().find(|scope| *scope == &Scope::TableRow).is_some() {
+        } else if self
+            .scope
+            .iter()
+            .find(|scope| *scope == &Scope::TableRow)
+            .is_some()
+        {
             self.table.1.last_mut().unwrap().last_mut().unwrap()
         } else {
             &mut self.content
         }
     }
 
-    fn handle_text<S>(&mut self, text: S) where S: AsRef<str> {
+    fn handle_text<S>(&mut self, text: S)
+    where
+        S: AsRef<str>,
+    {
         let s = text.as_ref();
         if let Some(Scope::CodeBlock(..)) = self.scope.last() {
             self.buffer += s;
@@ -452,7 +517,12 @@ impl<'a> Printer<'a> {
         }
         let style = self.style();
         for word in Words::new(s) {
-            if measure_text_width(&self.content) + word.len() + self.prefix_len() + self.suffix_len() > self.width {
+            if measure_text_width(&self.content)
+                + word.len()
+                + self.prefix_len()
+                + self.suffix_len()
+                > self.width
+            {
                 self.flush();
             }
             let mut word = if self.target().is_empty() {
@@ -479,7 +549,9 @@ impl<'a> Printer<'a> {
                     self.empty();
                 }
                 match tag {
-                    Tag::Paragraph => { self.flush(); }
+                    Tag::Paragraph => {
+                        self.flush();
+                    }
                     Tag::Rule => {
                         self.flush();
                         self.scope.push(Scope::Rule);
@@ -520,7 +592,7 @@ impl<'a> Printer<'a> {
                         self.scope.push(Scope::FootnoteContent);
                     }
                     Tag::HtmlBlock => { /* unknown */ }
-                    Tag::Table(columns) => { self.scope.push(Scope::Table(columns)) }
+                    Tag::Table(columns) => self.scope.push(Scope::Table(columns)),
                     Tag::TableHead => {
                         self.scope.push(Scope::TableHead);
                     }
@@ -530,16 +602,29 @@ impl<'a> Printer<'a> {
                     }
                     Tag::TableCell => {
                         self.scope.push(Scope::TableCell);
-                        if self.scope.iter().find(|scope| *scope == &Scope::TableHead).is_some() {
+                        if self
+                            .scope
+                            .iter()
+                            .find(|scope| *scope == &Scope::TableHead)
+                            .is_some()
+                        {
                             self.table.0.push(String::new());
                         } else {
                             self.table.1.last_mut().unwrap().push(String::new());
                         }
                     }
-                    Tag::Emphasis => { self.scope.push(Scope::Italic); }
-                    Tag::Strong => { self.scope.push(Scope::Bold); }
-                    Tag::Strikethrough => { self.scope.push(Scope::Strikethrough); }
-                    Tag::Code => { self.scope.push(Scope::Code); }
+                    Tag::Emphasis => {
+                        self.scope.push(Scope::Italic);
+                    }
+                    Tag::Strong => {
+                        self.scope.push(Scope::Bold);
+                    }
+                    Tag::Strikethrough => {
+                        self.scope.push(Scope::Strikethrough);
+                    }
+                    Tag::Code => {
+                        self.scope.push(Scope::Code);
+                    }
                     Tag::Link(_link_type, _destination, _title) => {
                         self.scope.push(Scope::Link);
                     }
@@ -547,7 +632,8 @@ impl<'a> Printer<'a> {
                         self.flush();
 
                         if !self.opts.no_images {
-                            let available_width = self.width - self.prefix_len() - self.suffix_len();
+                            let available_width =
+                                self.width - self.prefix_len() - self.suffix_len();
                             match image::open(destination.as_ref()) {
                                 Ok(image) => {
                                     let (mut width, mut height) = image.dimensions();
@@ -614,86 +700,92 @@ impl<'a> Printer<'a> {
                 }
             }
 
-            Event::End(tag) => {
-                match tag {
-                    Tag::Paragraph => {
-                        self.flush();
-                        self.queue_empty();
-                    }
-                    Tag::Header(level) => {
-                        self.flush();
-                        self.scope.pop();
-                        if level == 1 {
-                            self.print_rule();
-                        }
-                        self.queue_empty();
-                    }
-                    Tag::Rule => {
-                        self.flush();
-                        self.print_rule();
-                        self.scope.pop();
-                    }
-                    Tag::List(..) => {
-                        self.flush();
-                        self.scope.pop();
-                        self.queue_empty();
-                    }
-                    Tag::Item => {
-                        self.flush();
-                        self.scope.pop();
-                        if let Some(Scope::List(index)) = self.scope.last_mut() {
-                            *index = index.map(|x| x + 1);
-                        }
-                    },
-                    Tag::BlockQuote => {
-                        self.flush();
-                        self.scope.pop();
-                        self.queue_empty();
-                    }
-                    Tag::Table(..) => {
-                        self.print_table();
-                        self.scope.pop();
-                        self.queue_empty();
-                    }
-                    Tag::CodeBlock(..) => {
-                        self.flush_buffer();
-                        self.scope.pop();
-                        self.queue_empty();
-                    }
-                    Tag::Link(_link_type, destination, title) => {
-                        if !title.is_empty() && !destination.is_empty() && !self.opts.hide_urls {
-                            self.handle_text(format!(" <{}: {}>", title, destination));
-                        } else if !destination.is_empty() && !self.opts.hide_urls {
-                            self.handle_text(format!(" <{}>", destination));
-                        } else if !title.is_empty() {
-                            self.handle_text(format!(" <{}>", title));
-                        }
-                        self.scope.pop();
-                    }
-                    Tag::Image(_link_type, _destination, _title) => {
-                        self.flush();
-                        self.scope.pop();
-                        self.scope.pop();
-                        self.queue_empty();
-                    }
-                    Tag::FootnoteDefinition(..) => {
-                        self.flush();
-                        self.scope.pop();
-                        self.queue_empty();
-                    }
-                    _ => { self.scope.pop(); }
+            Event::End(tag) => match tag {
+                Tag::Paragraph => {
+                    self.flush();
+                    self.queue_empty();
                 }
+                Tag::Header(level) => {
+                    self.flush();
+                    self.scope.pop();
+                    if level == 1 {
+                        self.print_rule();
+                    }
+                    self.queue_empty();
+                }
+                Tag::Rule => {
+                    self.flush();
+                    self.print_rule();
+                    self.scope.pop();
+                }
+                Tag::List(..) => {
+                    self.flush();
+                    self.scope.pop();
+                    self.queue_empty();
+                }
+                Tag::Item => {
+                    self.flush();
+                    self.scope.pop();
+                    if let Some(Scope::List(index)) = self.scope.last_mut() {
+                        *index = index.map(|x| x + 1);
+                    }
+                }
+                Tag::BlockQuote => {
+                    self.flush();
+                    self.scope.pop();
+                    self.queue_empty();
+                }
+                Tag::Table(..) => {
+                    self.print_table();
+                    self.scope.pop();
+                    self.queue_empty();
+                }
+                Tag::CodeBlock(..) => {
+                    self.flush_buffer();
+                    self.scope.pop();
+                    self.queue_empty();
+                }
+                Tag::Link(_link_type, destination, title) => {
+                    if !title.is_empty() && !destination.is_empty() && !self.opts.hide_urls {
+                        self.handle_text(format!(" <{}: {}>", title, destination));
+                    } else if !destination.is_empty() && !self.opts.hide_urls {
+                        self.handle_text(format!(" <{}>", destination));
+                    } else if !title.is_empty() {
+                        self.handle_text(format!(" <{}>", title));
+                    }
+                    self.scope.pop();
+                }
+                Tag::Image(_link_type, _destination, _title) => {
+                    self.flush();
+                    self.scope.pop();
+                    self.scope.pop();
+                    self.queue_empty();
+                }
+                Tag::FootnoteDefinition(..) => {
+                    self.flush();
+                    self.scope.pop();
+                    self.queue_empty();
+                }
+                _ => {
+                    self.scope.pop();
+                }
+            },
+            Event::Text(text) => {
+                self.handle_text(text);
             }
-            Event::Text(text) => { self.handle_text(text); }
             Event::Html(_text) => { /* unimplemented */ }
             Event::InlineHtml(_text) => { /* unimplemented */ }
-            Event::FootnoteReference(text) => { 
+            Event::FootnoteReference(text) => {
                 self.scope.push(Scope::FootnoteReference);
-                self.handle_text(&format!("[{}]", text)); 
+                self.handle_text(&format!("[{}]", text));
                 self.scope.pop();
             }
-            Event::SoftBreak => { self.handle_text(" "); }
-            Event::HardBreak => { self.flush(); }
+            Event::SoftBreak => {
+                self.handle_text(" ");
+            }
+            Event::HardBreak => {
+                self.flush();
+            }
             Event::TaskListMarker(checked) => {
                 self.handle_text(if checked { "[✓] " } else { "[ ] " });
             }
