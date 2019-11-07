@@ -519,7 +519,7 @@ impl<'a> Printer<'a> {
                         self.flush();
                         self.scope.push(Scope::FootnoteContent);
                     }
-                    Tag::HtmlBlock => { /* unknown */ }
+                    Tag::HtmlBlock => { /* do nothing */ }
                     Tag::Table(columns) => { self.scope.push(Scope::Table(columns)) }
                     Tag::TableHead => {
                         self.scope.push(Scope::TableHead);
@@ -681,6 +681,7 @@ impl<'a> Printer<'a> {
                         self.scope.pop();
                         self.queue_empty();
                     }
+                    Tag::HtmlBlock => { /* do nothing */ }
                     _ => { self.scope.pop(); }
                 }
             }

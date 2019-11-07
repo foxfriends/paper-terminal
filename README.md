@@ -6,6 +6,8 @@
 
 # Paper terminal
 
+<!-- Here's a comment -->
+
 See [paper.png](./paper.png) to see what this looks like!
 
 Writes a file to a paper in your terminal. *Especially* if that file is Markdown! Features supported
