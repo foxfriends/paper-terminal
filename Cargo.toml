@@ -7,7 +7,7 @@ repository = "https://github.com/foxfriends/paper-terminal"
 homepage = "https://github.com/foxfriends/paper-terminal"
 license = "MIT"
 readme = "README.md"
-version = "0.3.2"
+version = "0.3.3"
 authors = ["Cameron Eldridge <cameldridge+git@gmail.com>"]
 edition = "2018"
 
