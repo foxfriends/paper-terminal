@@ -65,7 +65,7 @@ Not a very good comparison... this is more of an example of a table!
 ## Styling
 
 Paper uses [syncat stylesheets][] to allow full customization of styling. See the default stylesheet (`src/default.syncat`)
-as an example of how this works. To override the default styles, create `md.syncat` in your active syncat theme.
+as an example of how this works. To override the default styles, create `paper.syncat` in your active syncat theme.
 
 *   Different scopes are represented as nodes, inspired by the corresponding HTML tag names.
 

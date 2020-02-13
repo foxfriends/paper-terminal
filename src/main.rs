@@ -108,7 +108,7 @@ fn print<I>(opts: Opts, sources: I) where I: Iterator<Item=Result<String, std::i
 
     let centering = " ".repeat((terminal_width - width) / 2);
 
-    let stylesheet = File::open(dirs::active_color().join("md.syncat"))
+    let stylesheet = File::open(dirs::active_color().join("paper.syncat"))
         .map_err(Into::into)
         .and_then(|mut file| Stylesheet::from_reader(&mut file))
         .unwrap_or_else(|_| include_str!("default.syncat").parse::<Stylesheet>().unwrap());
