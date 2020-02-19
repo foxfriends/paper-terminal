@@ -377,7 +377,7 @@ dependencies = [
  "image 0.21.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "pulldown-cmark 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "structopt 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
- "syncat-stylesheet 2.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "syncat-stylesheet 2.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "terminal_size 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -613,7 +613,7 @@ dependencies = [
 
 [[package]]
 name = "syncat-stylesheet"
-version = "2.1.3"
+version = "2.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "ansi_term 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -812,7 +812,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum structopt-derive 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)" = "53010261a84b37689f9ed7d395165029f9cc7abb9f56bbfe86bee2597ed25107"
 "checksum syn 0.15.44 (registry+https://github.com/rust-lang/crates.io-index)" = "9ca4b3b69a77cbe1ffc9e198781b7acb0c7365a883670e8f1c1bc66fba79a5c5"
 "checksum syn 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)" = "af6f3550d8dff9ef7dc34d384ac6f107e5d31c8f57d9f28e0081503f547ac8f5"
-"checksum syncat-stylesheet 2.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "7ce14cf1686251f4da8b99ab03bd092c100db93beb7d97d779417fe1dbd94f44"
+"checksum syncat-stylesheet 2.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "169cd8133a783d924a282bdbcf4f0b8f6a9512a2768b72e424cadc4aac30b02f"
 "checksum terminal_size 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)" = "e25a60e3024df9029a414be05f46318a77c22538861a22170077d0388c0e926e"
 "checksum termios 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "72b620c5ea021d75a735c943269bb07d30c9b77d6ac6b236bc8b5c496ef05625"
 "checksum textwrap 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)" = "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060"
