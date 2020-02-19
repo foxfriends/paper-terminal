@@ -4,12 +4,12 @@ paper {
 }
 
 shadow {
-  background-color: 8;
+  background-color: brblack;
 }
 
 li "prefix",
 blockquote "prefix" {
-  color: 8;
+  color: brblack;
   dim: true;
 }
 
@@ -71,7 +71,7 @@ code {
 }
 
 footnote-def, footnote-ref {
-  color: 8;
+  color: brblack;
   dim: true;
 }
 

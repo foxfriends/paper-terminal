@@ -1,6 +1,8 @@
-use std::path::PathBuf;
+use std::convert::TryInto;
 use std::io::{self, Read};
-use std::fs::{self, File};
+use std::fs;
+use std::path::PathBuf;
+use ansi_term::Style;
 use structopt::StructOpt;
 use terminal_size::{Width, terminal_size};
 use console::strip_ansi_codes;
@@ -108,12 +110,10 @@ fn print<I>(opts: Opts, sources: I) where I: Iterator<Item=Result<String, std::i
 
     let centering = " ".repeat((terminal_width - width) / 2);
 
-    let stylesheet = File::open(dirs::active_color().join("paper.syncat"))
-        .map_err(Into::into)
-        .and_then(|mut file| Stylesheet::from_reader(&mut file))
+    let stylesheet = Stylesheet::from_file(dirs::active_color().join("paper.syncat"))
         .unwrap_or_else(|_| include_str!("default.syncat").parse::<Stylesheet>().unwrap());
-    let paper_style = stylesheet.resolve_basic(&["paper"], None).build();
-    let shadow_style = stylesheet.resolve_basic(&["shadow"], None).build();
+    let paper_style: Style = stylesheet.style(&"paper".into()).unwrap_or_default().try_into().unwrap_or_default();
+    let shadow_style: Style = stylesheet.style(&"shadow".into()).unwrap_or_default().try_into().unwrap_or_default();
     let blank_line = format!("{}", paper_style.paint(" ".repeat(width)));
     let end_shadow = format!("{}", shadow_style.paint(" "));
     let margin = format!("{}", paper_style.paint(" ".repeat(h_margin)));

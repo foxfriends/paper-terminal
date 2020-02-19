@@ -1,10 +1,11 @@
-use std::process::{Command, Stdio};
+use std::convert::{TryInto, TryFrom};
 use std::io::{Read as _, Write as _};
+use std::process::{Command, Stdio};
 use ansi_term::Style;
 use pulldown_cmark::{Alignment, Event, Tag};
 use image::{self, GenericImageView as _};
 use console::{measure_text_width, AnsiCodeIterator};
-use syncat_stylesheet::Stylesheet;
+use syncat_stylesheet::{Stylesheet, Query};
 use crate::termpix;
 use crate::words::Words;
 use crate::table::Table;
@@ -183,7 +184,7 @@ impl<'a> Printer<'a> {
                 let prefix = scope.prefix();
                 let mut all_scopes = scopes.clone();
                 all_scopes.append(&mut extra_scopes.unwrap_or(&[]).to_vec());
-                let style = stylesheet.resolve_basic(&all_scopes[..], Some("prefix")).build();
+                let style = Self::resolve_scopes(&stylesheet, &all_scopes, Some("prefix"));
                 Some((format!("{}", style.paint(&prefix)), prefix.chars().count()))
             })
             .fold((String::new(), 0), |(s, c), (s2, c2)| (s + &s2, c + c2))
@@ -202,7 +203,7 @@ impl<'a> Printer<'a> {
                 let suffix = scope.suffix();
                 let mut all_scopes = scopes.clone();
                 all_scopes.append(&mut extra_scopes.unwrap_or(&[]).to_vec());
-                let style = stylesheet.resolve_basic(&all_scopes[..], Some("suffix")).build();
+                let style = Self::resolve_scopes(&stylesheet, &all_scopes, Some("suffix"));
                 Some((format!("{}", style.paint(&suffix)), suffix.chars().count()))
             })
             .fold((String::new(), 0), |(s, c), (s2, c2)| (s2 + &s, c + c2))
@@ -213,7 +214,18 @@ impl<'a> Printer<'a> {
         if let Some(extras) = extra_scopes {
             scope_names.append(&mut extras.to_vec());
         }
-        self.stylesheet.resolve_basic(&scope_names, token).build()
+        Self::resolve_scopes(&self.stylesheet, &scope_names, token)
+    }
+
+    fn resolve_scopes(stylesheet: &Stylesheet, scopes: &[&str], token: Option<&str>) -> Style {
+        if scopes.is_empty() { return Style::default(); }
+        let mut query = Query::new(scopes[0], token.unwrap_or(scopes[0]));
+        let mut index = vec![];
+        for scope in &scopes[1..] {
+            query[&index[..]].add_child(Query::new(*scope, token.unwrap_or(scope)));
+            index.push(0);
+        }
+        stylesheet.style(&query).unwrap_or_default().try_into().unwrap_or_default()
     }
 
     fn style2(&self, token: Option<&str>) -> Style {
@@ -225,11 +237,11 @@ impl<'a> Printer<'a> {
     }
 
     fn shadow(&self) -> String {
-        format!("{}", self.stylesheet.resolve_basic(&["shadow"], None).build().paint(" "))
+        format!("{}", Style::try_from(self.stylesheet.style(&"shadow".into()).unwrap_or_default()).unwrap_or_default().paint(" "))
     }
 
     fn paper_style(&self) -> Style {
-        self.stylesheet.resolve_basic(&["paper"], None).build()
+        Style::try_from(self.stylesheet.style(&"paper".into()).unwrap_or_default()).unwrap_or_default()
     }
 
     fn queue_empty(&mut self) {
