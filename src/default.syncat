@@ -1,8 +1,3 @@
-paper {
-  background-color: white;
-  color: black;
-}
-
 shadow {
   background-color: brblack;
 }
@@ -85,4 +80,9 @@ codeblock * "suffix", {
 codeblock * "lang-tag" {
   color: white;
   dim: true;
+}
+
+paper {
+  background-color: white;
+  color: black;
 }
