@@ -1,6 +1,6 @@
-[syncat]: https://github.com/oinkiguana/syncat
-[syncat stylesheets]: https://github.com/oinkiguana/syncat-themes
-[foxfriends/paper-terminal]: https://github.com/oinkiguana/paper-terminal
+[syncat]: https://github.com/foxfriends/syncat
+[syncat stylesheets]: https://github.com/foxfriends/syncat-themes
+[foxfriends/paper-terminal]: https://github.com/foxfriends/paper-terminal
 [ttscoff/mdless]: https://github.com/ttscoff/mdless
 [lunaryorn/mdcat]: https://github.com/lunaryorn/mdcat
 
