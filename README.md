@@ -6,6 +6,8 @@
 
 # Paper terminal
 
+[![dependency status](https://deps.rs/repo/github/foxfriends/paper-terminal/status.svg)](https://deps.rs/repo/github/foxfriends/paper-terminal)
+
 <!-- Here's a comment -->
 
 See [paper.png](./paper.png) to see what this looks like!
