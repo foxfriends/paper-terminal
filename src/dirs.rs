@@ -1,4 +1,4 @@
-use directories::ProjectDirs;
+use directories_next::ProjectDirs;
 use std::path::PathBuf;
 
 fn syncat_directories() -> ProjectDirs {

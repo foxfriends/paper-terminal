@@ -23,5 +23,5 @@ pulldown-cmark = "0.8"
 ansi_term = "0.12"
 image = "0.23"
 console = "0.13"
-directories = "3.0"
+directories-next = "2.0"
 syncat-stylesheet = { version = "2.1.4", features = ["ansi_term"] }
