@@ -17,7 +17,7 @@ name = "paper"
 path = "src/main.rs"
 
 [dependencies]
-structopt = "0.2"
+structopt = "0.3"
 terminal_size = "0.1"
 pulldown-cmark = "0.4"
 ansi_term = "0.12"
