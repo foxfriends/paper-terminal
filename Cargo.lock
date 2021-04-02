@@ -427,7 +427,7 @@ dependencies = [
 
 [[package]]
 name = "paper-terminal"
-version = "2.1.1"
+version = "2.1.2"
 dependencies = [
  "ansi_term 0.12.1",
  "console",
