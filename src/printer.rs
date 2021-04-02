@@ -1,8 +1,9 @@
+use crate::str_width;
 use crate::table::Table;
 use crate::termpix;
 use crate::words::Words;
 use ansi_term::Style;
-use console::{measure_text_width, AnsiCodeIterator};
+use console::AnsiCodeIterator;
 use image::{self, GenericImageView as _};
 use pulldown_cmark::{Alignment, CodeBlockKind, Event, Tag};
 use std::convert::{TryFrom, TryInto};
@@ -189,7 +190,7 @@ impl<'a> Printer<'a> {
                 let mut all_scopes = scopes.clone();
                 all_scopes.append(&mut extra_scopes.unwrap_or(&[]).to_vec());
                 let style = Self::resolve_scopes(&stylesheet, &all_scopes, Some("prefix"));
-                Some((format!("{}", style.paint(&prefix)), prefix.chars().count()))
+                Some((format!("{}", style.paint(&prefix)), str_width(&prefix)))
             })
             .fold((String::new(), 0), |(s, c), (s2, c2)| (s + &s2, c + c2))
     }
@@ -208,7 +209,7 @@ impl<'a> Printer<'a> {
                 let mut all_scopes = scopes.clone();
                 all_scopes.append(&mut extra_scopes.unwrap_or(&[]).to_vec());
                 let style = Self::resolve_scopes(&stylesheet, &all_scopes, Some("suffix"));
-                Some((format!("{}", style.paint(&suffix)), suffix.chars().count()))
+                Some((format!("{}", style.paint(&suffix)), str_width(&suffix)))
             })
             .fold((String::new(), 0), |(s, c), (s2, c2)| (s2 + &s, c + c2))
     }
@@ -272,8 +273,13 @@ impl<'a> Printer<'a> {
             self.centering,
             self.margin,
             prefix,
-            self.paper_style()
-                .paint(" ".repeat(self.width - prefix_len - suffix_len)),
+            self.paper_style().paint(
+                " ".repeat(
+                    self.width
+                        .saturating_sub(prefix_len)
+                        .saturating_sub(suffix_len)
+                )
+            ),
             suffix,
             self.margin,
             self.shadow(),
@@ -289,8 +295,13 @@ impl<'a> Printer<'a> {
             self.centering,
             self.margin,
             prefix,
-            self.style()
-                .paint("─".repeat(self.width - prefix_len - suffix_len)),
+            self.style().paint(
+                "─".repeat(
+                    self.width
+                        .saturating_sub(prefix_len)
+                        .saturating_sub(suffix_len)
+                )
+            ),
             suffix,
             self.margin,
             self.shadow(),
@@ -304,7 +315,10 @@ impl<'a> Printer<'a> {
             return;
         };
         let (heading, rows) = std::mem::replace(&mut self.table, (vec![], vec![]));
-        let available_width = self.width - self.prefix_len() - self.suffix_len();
+        let available_width = self
+            .width
+            .saturating_sub(self.prefix_len())
+            .saturating_sub(self.suffix_len());
         let table_str =
             Table::new(heading, rows, available_width).print(self.paper_style(), alignments);
         for line in table_str.lines() {
@@ -317,7 +331,7 @@ impl<'a> Printer<'a> {
                 line,
                 prefix,
                 self.paper_style()
-                    .paint(" ".repeat(available_width - measure_text_width(line))),
+                    .paint(" ".repeat(available_width.saturating_sub(str_width(line)))),
                 suffix,
                 self.margin,
                 self.shadow(),
@@ -338,9 +352,10 @@ impl<'a> Printer<'a> {
                 let mut first_prefix = Some(self.prefix2(Some(&[&language_context[..]])));
                 let mut first_suffix = Some(self.suffix2(Some(&[&language_context[..]])));
 
-                let available_width = self.width
-                    - first_prefix.as_ref().unwrap().1
-                    - first_suffix.as_ref().unwrap().1;
+                let available_width = self
+                    .width
+                    .saturating_sub(first_prefix.as_ref().unwrap().1)
+                    .saturating_sub(first_suffix.as_ref().unwrap().1);
                 let buffer = std::mem::replace(&mut self.buffer, String::new());
                 let buffer = if self.opts.syncat {
                     let syncat = Command::new("syncat")
@@ -368,7 +383,7 @@ impl<'a> Printer<'a> {
                         .lines()
                         .map(|mut line| {
                             let mut output = String::new();
-                            while line.chars().count() > available_width {
+                            while str_width(&line) > available_width {
                                 let prefix = line.chars().take(available_width).collect::<String>();
                                 output = format!("{}{}\n", output, prefix);
                                 line = &line[prefix.len()..];
@@ -377,7 +392,7 @@ impl<'a> Printer<'a> {
                                 "{}{}{}\n",
                                 output,
                                 line,
-                                " ".repeat(available_width - line.chars().count())
+                                " ".repeat(available_width.saturating_sub(str_width(&line)))
                             )
                         })
                         .collect()
@@ -401,7 +416,7 @@ impl<'a> Printer<'a> {
                 );
 
                 for line in buffer.lines() {
-                    let width = measure_text_width(line);
+                    let width = str_width(line);
                     let (prefix, _) = self.prefix2(Some(&[&language_context[..]]));
                     let (suffix, _) = self.suffix2(Some(&[&language_context[..]]));
                     print!(
@@ -424,7 +439,7 @@ impl<'a> Printer<'a> {
                     }
                     println!(
                         "{}{}{}{}",
-                        style.paint(" ".repeat(available_width - width)),
+                        style.paint(" ".repeat(available_width.saturating_sub(width))),
                         suffix,
                         self.margin,
                         self.shadow(),
@@ -444,7 +459,7 @@ impl<'a> Printer<'a> {
                     prefix,
                     format!(
                         "{}{}",
-                        style.paint(" ".repeat(available_width - lang.chars().count())),
+                        style.paint(" ".repeat(available_width.saturating_sub(str_width(&lang)))),
                         self.style3(Some(&[&language_context[..]]), Some("lang-tag"))
                             .paint(lang)
                     ),
@@ -489,7 +504,10 @@ impl<'a> Printer<'a> {
             suffix,
             self.paper_style().paint(
                 " ".repeat(
-                    self.width - measure_text_width(&self.content) - prefix_len - suffix_len
+                    self.width
+                        .saturating_sub(str_width(&self.content))
+                        .saturating_sub(prefix_len)
+                        .saturating_sub(suffix_len)
                 )
             ),
             self.margin,
@@ -529,10 +547,7 @@ impl<'a> Printer<'a> {
         }
         let style = self.style();
         for word in Words::new(s) {
-            if measure_text_width(&self.content)
-                + word.len()
-                + self.prefix_len()
-                + self.suffix_len()
+            if str_width(&self.content) + word.len() + self.prefix_len() + self.suffix_len()
                 > self.width
             {
                 self.flush();
@@ -542,8 +557,11 @@ impl<'a> Printer<'a> {
             } else {
                 &word
             };
-            let available_len = self.width - self.prefix_len() - self.suffix_len();
-            while measure_text_width(&self.content) + word.len() > available_len {
+            let available_len = self
+                .width
+                .saturating_sub(self.prefix_len())
+                .saturating_sub(self.suffix_len());
+            while str_width(&self.content) + str_width(&word) > available_len {
                 let part = word.chars().take(available_len).collect::<String>();
                 self.target().push_str(&format!("{}", style.paint(&part)));
                 word = &word[part.len()..];
@@ -640,8 +658,10 @@ impl<'a> Printer<'a> {
                         self.flush();
 
                         if !self.opts.no_images {
-                            let available_width =
-                                self.width - self.prefix_len() - self.suffix_len();
+                            let available_width = self
+                                .width
+                                .saturating_sub(self.prefix_len())
+                                .saturating_sub(self.suffix_len());
                             match image::open(destination.as_ref()) {
                                 Ok(image) => {
                                     let (mut width, mut height) = image.dimensions();

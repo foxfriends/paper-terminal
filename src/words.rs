@@ -44,20 +44,20 @@ impl<S: AsRef<str>> Iterator for Words<S> {
         self.position += start;
         if start == chars.len() {
             if chars.len() == 0 {
-                return None
+                return None;
             } else if self.preserve_whitespace {
-                return Some(chars[..].into_iter().collect())
+                return Some(chars[..].into_iter().collect());
             } else {
-                return Some(" ".to_string())
+                return Some(" ".to_string());
             }
         }
         let mut len = 0;
-        while start+len < chars.len() {
-            if chars[start+len] == '-' {
+        while start + len < chars.len() {
+            if chars[start + len] == '-' {
                 len += 1;
                 break;
             }
-            if chars[start+len].is_whitespace() {
+            if chars[start + len].is_whitespace() {
                 break;
             }
             len += 1;
@@ -65,12 +65,14 @@ impl<S: AsRef<str>> Iterator for Words<S> {
         self.position += len;
         if chars[0].is_whitespace() {
             if self.preserve_whitespace {
-                return Some(chars[0..start+len].into_iter().collect::<String>())
+                return Some(chars[0..start + len].into_iter().collect::<String>());
             } else {
-                return Some(String::from(" ") + &chars[start..start+len].into_iter().collect::<String>())
+                return Some(
+                    String::from(" ") + &chars[start..start + len].into_iter().collect::<String>(),
+                );
             }
         } else {
-            return Some(chars[start..start+len].into_iter().collect::<String>())
+            return Some(chars[start..start + len].into_iter().collect::<String>());
         }
     }
 }

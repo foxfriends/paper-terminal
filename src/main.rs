@@ -8,6 +8,7 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 use syncat_stylesheet::Stylesheet;
 use terminal_size::{terminal_size, Width};
+use unicode_width::UnicodeWidthChar;
 
 mod dirs;
 mod printer;
@@ -17,6 +18,13 @@ mod words;
 
 use printer::Printer;
 use words::Words;
+
+fn str_width(s: &str) -> usize {
+    strip_ansi_codes(s)
+        .chars()
+        .flat_map(UnicodeWidthChar::width)
+        .sum()
+}
 
 /// Prints papers in your terminal
 #[derive(StructOpt, Debug)]
@@ -113,7 +121,7 @@ where
         return;
     }
 
-    let centering = " ".repeat((terminal_width - width) / 2);
+    let centering = " ".repeat((terminal_width.saturating_sub(width)) / 2);
 
     let stylesheet = Stylesheet::from_file(dirs::active_color().join("paper.syncat"))
         .unwrap_or_else(|_| {
@@ -153,13 +161,15 @@ where
                 let mut buffer = String::new();
                 let mut indent = None;
                 for word in Words::preserving_whitespace(line) {
-                    if buffer.chars().count() + word.chars().count() > available_width {
+                    if str_width(&buffer) + str_width(&word) > available_width {
                         println!(
                             "{}{}{}{}{}{}",
                             centering,
                             margin,
                             paper_style.paint(&buffer),
-                            paper_style.paint(" ".repeat(available_width - buffer.chars().count())),
+                            paper_style.paint(
+                                " ".repeat(available_width.saturating_sub(str_width(&buffer)))
+                            ),
                             margin,
                             shadow_style.paint(" "),
                         );
@@ -182,7 +192,8 @@ where
                     centering,
                     margin,
                     paper_style.paint(&buffer),
-                    paper_style.paint(" ".repeat(available_width - buffer.chars().count())),
+                    paper_style
+                        .paint(" ".repeat(available_width.saturating_sub(str_width(&buffer)))),
                     margin,
                     shadow_style.paint(" "),
                 );

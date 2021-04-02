@@ -437,6 +437,7 @@ dependencies = [
  "structopt",
  "syncat-stylesheet",
  "terminal_size",
+ "unicode-width",
 ]
 
 [[package]]
