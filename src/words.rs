@@ -1,3 +1,5 @@
+use cjk::is_cjk_codepoint;
+
 pub struct Words<S: AsRef<str>> {
     source: S,
     position: usize,
@@ -31,6 +33,60 @@ impl<S: AsRef<str>> Words<S> {
     }
 }
 
+// NOTE: this almost certainly does some extra processing... but for my sanity,
+// we accept that
+fn may_end_word_cjk(ch: char) -> bool {
+    // simplified chinese
+    !"$(£¥·'\"〈《「『【〔〖〝﹙﹛＄（．［｛￡￥"
+        .chars()
+        .any(|c| c == ch)
+    // traditional chinese
+    && !"([{£¥'\"‵〈《「『〔〝︴﹙﹛（｛︵︷︹︻︽︿﹁﹃﹏"
+        .chars()
+        .any(|c| c == ch)
+    // japanese
+    && !"([｛〔〈《「『【〘〖〝'\"｟«"
+        .chars()
+        .any(|c| c == ch)
+    // japanese inseparable
+    && !"—...‥〳〴〵"
+        .chars()
+        .any(|c| c == ch)
+    // korean
+    && !"$([\\{£¥'\"々〇〉》」〔＄（［｛｠￥￦ #"
+        .chars()
+        .any(|c| c == ch)
+}
+
+fn may_start_word_cjk(ch: char) -> bool {
+    // simplified chinese
+    !"!%),.:;?]}¢°·'\"†‡›℃∶、。〃〆〕〗〞﹚﹜！＂％＇），．：；？！］｝～"
+        .chars()
+        .any(|c| c == ch)
+    // traditional chinese
+    && !"!),.:;?]}¢·–— '\"• 、。〆〞〕〉》」︰︱︲︳﹐﹑﹒﹓﹔﹕﹖﹘﹚﹜！），．：；？︶︸︺︼︾﹀﹂﹗］｜｝､"
+        .chars()
+        .any(|c| c == ch)
+    // japenese
+    && !")]｝〕〉》」』】〙〗〟'\"｠»"
+        .chars()
+        .any(|c| c == ch)
+    && !"ヽヾーァィゥェォッャュョヮヵヶぁぃぅぇぉっゃゅょゎゕゖㇰㇱㇲㇳㇴㇵㇶㇷㇸㇹㇺㇻㇼㇽㇾㇿ々〻"
+        .chars()
+        .any(|c| c == ch)
+    && !"‐゠–〜? ! ‼ ⁇ ⁈ ⁉・、:;,。."
+        .chars()
+        .any(|c| c == ch)
+    // japanese inseparable
+    && !"—...‥〳〴〵"
+        .chars()
+        .any(|c| c == ch)
+    // korean
+    && !"!%),.:;?]}¢°'\"†‡℃〆〈《「『〕！％），．：；？］｝"
+        .chars()
+        .any(|c| c == ch)
+}
+
 impl<S: AsRef<str>> Iterator for Words<S> {
     type Item = String;
 
@@ -58,6 +114,16 @@ impl<S: AsRef<str>> Iterator for Words<S> {
                 break;
             }
             if chars[start + len].is_whitespace() {
+                break;
+            }
+            if len != 0
+                // Before or after cjk characters, we can usually break line, unless it's one of the exceptions.
+                // I got the exceptions off Wikipedia:
+                //     https://en.wikipedia.org/wiki/Line_breaking_rules_in_East_Asian_languages
+                && (is_cjk_codepoint(chars[start + len - 1]) || is_cjk_codepoint(chars[start + len]))
+                && may_end_word_cjk(chars[start + len - 1])
+                && may_start_word_cjk(chars[start + len])
+            {
                 break;
             }
             len += 1;

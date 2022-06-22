@@ -26,3 +26,4 @@ console = "0.14"
 directories-next = "2.0"
 syncat-stylesheet = { version = "2.1.4", features = ["ansi_term"] }
 unicode-width = "0.1"
+cjk = "0.2"

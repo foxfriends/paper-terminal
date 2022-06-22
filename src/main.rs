@@ -22,7 +22,7 @@ use words::Words;
 fn str_width(s: &str) -> usize {
     strip_ansi_codes(s)
         .chars()
-        .flat_map(UnicodeWidthChar::width)
+        .flat_map(UnicodeWidthChar::width_cjk)
         .sum()
 }
 
