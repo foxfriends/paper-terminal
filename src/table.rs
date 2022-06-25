@@ -1,6 +1,7 @@
+use crate::str_width;
 use crate::words::Words;
 use ansi_term::Style;
-use console::{measure_text_width, strip_ansi_codes};
+use console::strip_ansi_codes;
 use pulldown_cmark::Alignment;
 use std::io::Write;
 
@@ -49,7 +50,7 @@ impl Table {
             .iter()
             .map(|title| {
                 Words::new(title)
-                    .map(|word| word.trim().len())
+                    .map(|word| str_width(word.trim()))
                     .max()
                     .unwrap_or(0)
             })
@@ -61,13 +62,13 @@ impl Table {
                 row.iter()
                     .map(|cell| {
                         Words::new(cell)
-                            .map(|word| word.trim().len())
+                            .map(|word| str_width(word.trim()))
                             .max()
                             .unwrap_or(0)
                     })
                     .collect::<Vec<_>>()
             })
-            .fold(title_longest_words.clone(), |mut chars, row| {
+            .fold(title_longest_words, |mut chars, row| {
                 for i in 0..row.len() {
                     chars[i] = usize::max(chars[i], row[i]);
                 }
@@ -76,14 +77,14 @@ impl Table {
 
         let mut title_chars = titles
             .iter()
-            .map(|title| title.lines().map(measure_text_width).max().unwrap_or(0))
+            .map(|title| title.lines().map(str_width).max().unwrap_or(0))
             .collect::<Vec<_>>();
         title_chars.resize(num_cols, 0);
         let max_chars_per_col = rows
             .iter()
             .map(|row| {
                 row.iter()
-                    .map(|cell| cell.lines().map(measure_text_width).max().unwrap_or(0))
+                    .map(|cell| cell.lines().map(str_width).max().unwrap_or(0))
                     .collect::<Vec<_>>()
             })
             .fold(title_chars.clone(), |mut chars, row| {
@@ -159,7 +160,7 @@ fn print_row<W: Write>(
             loop {
                 match words.next() {
                     Some(next) => {
-                        if measure_text_width(&line) + measure_text_width(&next) <= cols[i] {
+                        if str_width(&line) + str_width(&next) <= cols[i] {
                             line += &next;
                         } else {
                             words.undo();
@@ -172,11 +173,11 @@ fn print_row<W: Write>(
             }
             line = line.trim().to_string();
             let padded = if alignment[i] == Alignment::Center {
-                format!(" {: ^width$} │", line, width = cols[i])
+                format!(" {: ^width$} │", line, width = cols[i] - (line.len().saturating_sub(str_width(&line))))
             } else if alignment[i] == Alignment::Right {
-                format!(" {: >width$} │", line, width = cols[i])
+                format!(" {: >width$} │", line, width = cols[i] - (line.len().saturating_sub(str_width(&line))))
             } else {
-                format!(" {: <width$} │", line, width = cols[i])
+                format!(" {: <width$} │", line, width = cols[i] - (line.len().saturating_sub(str_width(&line))))
             };
             write!(w, "{}", paper_style.paint(padded)).unwrap();
         }

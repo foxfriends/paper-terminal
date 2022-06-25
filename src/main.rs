@@ -8,23 +8,17 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 use syncat_stylesheet::Stylesheet;
 use terminal_size::{terminal_size, Width};
-use unicode_width::UnicodeWidthChar;
 
 mod dirs;
 mod printer;
+mod str_width;
 mod table;
 mod termpix;
 mod words;
 
 use printer::Printer;
+use str_width::str_width;
 use words::Words;
-
-fn str_width(s: &str) -> usize {
-    strip_ansi_codes(s)
-        .chars()
-        .flat_map(UnicodeWidthChar::width_cjk)
-        .sum()
-}
 
 /// Prints papers in your terminal
 #[derive(StructOpt, Debug)]

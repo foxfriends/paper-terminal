@@ -22,7 +22,7 @@ terminal_size = "0.1"
 pulldown-cmark = "0.8"
 ansi_term = "0.12"
 image = "0.23"
-console = "0.14"
+console = { version = "0.14", features = ["unicode-width"] }
 directories-next = "2.0"
 syncat-stylesheet = { version = "2.1.4", features = ["ansi_term"] }
 unicode-width = "0.1"
