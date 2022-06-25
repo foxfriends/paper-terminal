@@ -384,7 +384,15 @@ impl<'a> Printer<'a> {
                         .map(|mut line| {
                             let mut output = String::new();
                             while str_width(&line) > available_width {
-                                let prefix = line.chars().take(available_width).collect::<String>();
+                                let not_too_wide = {
+                                    let mut acc = 0;
+                                    move |ch: &char| {
+                                        acc += str_width(&ch.to_string());
+                                        acc < available_width
+                                    }
+                                };
+                                let prefix =
+                                    line.chars().take_while(not_too_wide).collect::<String>();
                                 output = format!("{}{}\n", output, prefix);
                                 line = &line[prefix.len()..];
                             }
