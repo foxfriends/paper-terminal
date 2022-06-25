@@ -420,7 +420,7 @@ checksum = "7709cef83f0c1f58f666e746a08b21e0085f7440fa6a29cc194d68aac97a4225"
 
 [[package]]
 name = "paper-terminal"
-version = "2.2.0"
+version = "2.2.1"
 dependencies = [
  "ansi_term",
  "cjk",
