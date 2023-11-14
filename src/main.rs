@@ -1,11 +1,11 @@
 use ansi_term::Style;
+use clap::Parser as _;
 use console::strip_ansi_codes;
 use pulldown_cmark::{Options, Parser};
 use std::convert::TryInto;
 use std::fs;
 use std::io::{self, Read};
 use std::path::PathBuf;
-use structopt::StructOpt;
 use syncat_stylesheet::Stylesheet;
 use terminal_size::{terminal_size, Width};
 
@@ -21,29 +21,28 @@ use str_width::str_width;
 use words::Words;
 
 /// Prints papers in your terminal
-#[derive(StructOpt, Debug)]
-#[structopt(name = "paper")]
-#[structopt(rename_all = "kebab-case")]
-#[structopt(setting = structopt::clap::AppSettings::ColoredHelp)]
+#[derive(clap::Parser, Debug)]
+#[clap(name = "paper")]
+#[clap(rename_all = "kebab-case")]
 pub struct Opts {
     /// Margin (shortcut for horizontal and vertical margin set to the same value)
-    #[structopt(short, long, default_value = "6")]
+    #[structopt(short = 'm', long, default_value = "6")]
     pub margin: usize,
 
     /// Horizontal margin (overrides --margin)
-    #[structopt(short, long)]
+    #[structopt(long)]
     pub h_margin: Option<usize>,
 
     /// Vertical margin (overrides --margin)
-    #[structopt(short, long)]
+    #[structopt(long)]
     pub v_margin: Option<usize>,
 
     /// The width of the paper (including the space used for the margin)
-    #[structopt(short, long, default_value = "92")]
+    #[structopt(short = 'w', long, default_value = "92")]
     pub width: usize,
 
     /// Don't parse as Markdown, just render the plain text on a paper
-    #[structopt(short, long)]
+    #[structopt(short = 'p', long)]
     pub plain: bool,
 
     /// The length to consider tabs as.
@@ -51,19 +50,19 @@ pub struct Opts {
     pub tab_length: usize,
 
     /// Hide link URLs
-    #[structopt(short = "u", long)]
+    #[structopt(short = 'U', long)]
     pub hide_urls: bool,
 
     /// Disable drawing images
-    #[structopt(short = "i", long)]
+    #[structopt(short = 'I', long)]
     pub no_images: bool,
 
     /// Position paper on the left edge of the terminal, instead of centred.
-    #[structopt(short = "l", long)]
+    #[structopt(short = 'l', long)]
     pub left: bool,
 
     /// Position paper on the right edge of the terminal, instead of centred.
-    #[structopt(short = "r", long)]
+    #[structopt(short = 'r', long)]
     pub right: bool,
 
     /// Use syncat to highlight code blocks. Requires you have syncat installed.
@@ -75,7 +74,7 @@ pub struct Opts {
     pub dev: bool,
 
     /// Files to print
-    #[structopt(name = "FILE", parse(from_os_str))]
+    #[structopt(name = "FILE")]
     pub files: Vec<PathBuf>,
 }
 
@@ -235,7 +234,7 @@ where
 }
 
 fn main() {
-    let opts = Opts::from_args();
+    let opts = Opts::parse();
 
     if opts.files.is_empty() {
         let mut string = String::new();
