@@ -21,8 +21,8 @@ clap = { version = "4.4", features = ["derive"] }
 terminal_size = "0.1"
 pulldown-cmark = "0.8"
 ansi_term = "0.12"
-image = "0.23"
-console = { version = "0.14", features = ["unicode-width"] }
+image = "0.24"
+console = { version = "0.15", features = ["unicode-width"] }
 directories-next = "2.0"
 syncat-stylesheet = { version = "3.5.0", features = ["ansi_term"] }
 unicode-width = "0.1"
