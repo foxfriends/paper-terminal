@@ -58,6 +58,14 @@ pub struct Opts {
     #[structopt(short = "i", long)]
     pub no_images: bool,
 
+    /// Position paper on the left edge of the terminal, instead of centred.
+    #[structopt(short = "l", long)]
+    pub left: bool,
+
+    /// Position paper on the right edge of the terminal, instead of centred.
+    #[structopt(short = "r", long)]
+    pub right: bool,
+
     /// Use syncat to highlight code blocks. Requires you have syncat installed.
     #[structopt(short, long)]
     pub syncat: bool,
@@ -115,7 +123,11 @@ where
         return;
     }
 
-    let centering = " ".repeat((terminal_width.saturating_sub(width)) / 2);
+    let left_space = match (opts.left, opts.right) {
+        (true, false) => "".to_owned(),
+        (false, true) => " ".repeat(terminal_width.saturating_sub(width) - 1),
+        _ => " ".repeat((terminal_width.saturating_sub(width)) / 2),
+    };
 
     let stylesheet = Stylesheet::from_file(dirs::active_color().join("paper.syncat"))
         .unwrap_or_else(|_| {
@@ -146,9 +158,9 @@ where
             }
         };
         if opts.plain {
-            println!("{}{}", centering, blank_line);
+            println!("{}{}", left_space, blank_line);
             for _ in 0..v_margin {
-                println!("{}{}{}", centering, blank_line, end_shadow);
+                println!("{}{}{}", left_space, blank_line, end_shadow);
             }
 
             for line in source.lines() {
@@ -158,7 +170,7 @@ where
                     if str_width(&buffer) + str_width(&word) > available_width {
                         println!(
                             "{}{}{}{}{}{}",
-                            centering,
+                            left_space,
                             margin,
                             paper_style.paint(&buffer),
                             paper_style.paint(
@@ -183,7 +195,7 @@ where
                 }
                 println!(
                     "{}{}{}{}{}{}",
-                    centering,
+                    left_space,
                     margin,
                     paper_style.paint(&buffer),
                     paper_style
@@ -193,9 +205,9 @@ where
                 );
             }
             for _ in 0..v_margin {
-                println!("{}{}{}", centering, blank_line, end_shadow);
+                println!("{}{}{}", left_space, blank_line, end_shadow);
             }
-            println!("{} {}", centering, shadow_style.paint(" ".repeat(width)));
+            println!("{} {}", left_space, shadow_style.paint(" ".repeat(width)));
         } else if opts.dev {
             let parser = Parser::new_ext(&source, Options::all());
             for event in parser {
@@ -203,21 +215,21 @@ where
             }
         } else {
             let parser = Parser::new_ext(&source, Options::all());
-            println!("{}{}", centering, blank_line);
+            println!("{}{}", left_space, blank_line);
             for _ in 0..v_margin {
-                println!("{}{}{}", centering, blank_line, end_shadow);
+                println!("{}{}{}", left_space, blank_line, end_shadow);
             }
 
             let mut printer =
-                Printer::new(&centering, &margin, available_width, &stylesheet, &opts);
+                Printer::new(&left_space, &margin, available_width, &stylesheet, &opts);
             for event in parser {
                 printer.handle(event);
             }
 
             for _ in 0..v_margin {
-                println!("{}{}{}", centering, blank_line, end_shadow);
+                println!("{}{}{}", left_space, blank_line, end_shadow);
             }
-            println!("{} {}", centering, shadow_style.paint(" ".repeat(width)));
+            println!("{} {}", left_space, shadow_style.paint(" ".repeat(width)));
         }
     }
 }
