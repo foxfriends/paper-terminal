@@ -8,7 +8,7 @@ homepage = "https://github.com/foxfriends/paper-terminal"
 license = "MIT"
 readme = "README.md"
 version = "3.0.0"
-authors = ["Cameron Eldridge <cameldridge+git@gmail.com>"]
+authors = ["Cameron Eldridge <cam.eldridge@gmail.com>"]
 edition = "2018"
 categories = ["command-line-utilities"]
 
