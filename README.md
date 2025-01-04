@@ -15,7 +15,7 @@ See [paper.png](./paper.png) to see what this looks like!
 Writes a file to a paper in your terminal. *Especially* if that file is Markdown! Features supported
 include:
 
-1.  The usual text, and paragraphs with automatic line-wrapping. You can manually wrap with  
+1.  The usual text, and paragraphs with automatic line-wrapping. You can manually wrap with
     hard breaks as expected.
 
     Otherwise, paragraphs will be nicely spaced.
@@ -25,6 +25,10 @@ include:
     *   Ordered
     *   Unordered
         *   Nested
+
+    Definition
+    : This is a definition
+
 5.  Rules
 6.  `Inline code`
 7.  Code blocks, with [syncat][] integration for syntax highlighting. Note that you must install
@@ -118,29 +122,26 @@ paper README.md -s
 ```
 
 ```
-paper 0.1.0
-Cameron Eldridge <cameldridge+git@gmail.com>
 Prints papers in your terminal
 
-USAGE:
-    paper [FLAGS] [OPTIONS] [file]...
+Usage: paper [OPTIONS] [FILE]...
 
-FLAGS:
-        --dev          Print in debug mode
-        --help         Prints help information
-    -u, --hide-urls    Hide link URLs
-    -i, --no-images    Disable drawing images
-    -p, --plain        Don't parse as Markdown, just render the plain text on a paper
-    -s, --syncat       Use syncat to highlight code blocks. Requires you have syncat installed.
-    -V, --version      Prints version information
+Arguments:
+  [FILE]...  Files to print
 
-OPTIONS:
-    -h, --h-margin <h-margin>    Horizontal margin (overrides --margin)
-    -m, --margin <margin>        Margin (shortcut for horizontal and vertical margin set to the same value) [default:
-                                 6]
-    -v, --v-margin <v-margin>    Vertical margin (overrides --margin)
-    -w, --width <width>          The width of the paper (including the space used for the margin) [default: 92]
-
-ARGS:
-    <file>...    Files to print
+Options:
+  -m, --margin <MARGIN>            Margin (shortcut for horizontal and vertical margin set to the same value) [default: 6]
+      --h-margin <H_MARGIN>        Horizontal margin (overrides --margin)
+      --v-margin <V_MARGIN>        Vertical margin (overrides --margin)
+  -w, --width <WIDTH>              The width of the paper (including the space used for the margin) [default: 92]
+  -p, --plain                      Don't parse as Markdown, just render the plain text on a paper
+  -t, --tab-length <TAB_LENGTH>    The length to consider tabs as [default: 4]
+  -U, --hide-urls                  Hide link URLs
+  -I, --no-images                  Disable drawing images
+  -l, --left                       Position paper on the left edge of the terminal, instead of centred
+  -r, --right                      Position paper on the right edge of the terminal, instead of centred
+  -s, --syncat                     Use syncat to highlight code blocks. Requires you have syncat installed
+      --dev                        Print in debug mode
+      --completions <COMPLETIONS>  Generate shell completions [possible values: bash, elvish, fish, powershell, zsh]
+  -h, --help                       Print help
 ```

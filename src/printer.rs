@@ -24,6 +24,9 @@ enum Scope {
     FootnoteReference,
     FootnoteContent,
     List(Option<u64>),
+    DefinitionList,
+    Term,
+    Definition,
     ListItem(Option<u64>, bool),
     Code,
     CodeBlock(String),
@@ -73,6 +76,7 @@ impl Scope {
             Scope::BlockQuote(..) => "┃   ".to_owned(),
             Scope::Heading(HeadingLevel::H2) => "├─── ".to_owned(),
             Scope::Heading(..) => "    ".to_owned(),
+            Scope::Definition => "    ".to_owned(),
             _ => String::new(),
         }
     }
@@ -110,6 +114,9 @@ impl Scope {
             FootnoteContent => "footnote",
             List(Some(..)) => "ol",
             List(None) => "ul",
+            DefinitionList => "dl",
+            Term => "dt",
+            Definition => "dd",
             ListItem(..) => "li",
             Code => "code",
             CodeBlock(..) => "codeblock",
@@ -687,9 +694,18 @@ impl<'a> Printer<'a> {
                         self.flush();
                         self.scope.push(Scope::List(start_index));
                     }
-                    Tag::DefinitionList => {}
-                    Tag::DefinitionListTitle => {}
-                    Tag::DefinitionListDefinition => {}
+                    Tag::DefinitionList => {
+                        self.flush();
+                        self.scope.push(Scope::DefinitionList);
+                    }
+                    Tag::DefinitionListTitle => {
+                        self.flush();
+                        self.scope.push(Scope::Term);
+                    }
+                    Tag::DefinitionListDefinition => {
+                        self.flush();
+                        self.scope.push(Scope::Definition);
+                    }
                     Tag::Item => {
                         self.flush();
                         if let Some(&Scope::List(index)) = self.scope.last() {
@@ -843,6 +859,20 @@ impl<'a> Printer<'a> {
                     self.queue_empty();
                 }
                 TagEnd::List(..) => {
+                    self.flush();
+                    self.scope.pop();
+                    self.queue_empty();
+                }
+                TagEnd::DefinitionList => {
+                    self.flush();
+                    self.scope.pop();
+                    self.queue_empty();
+                }
+                TagEnd::DefinitionListTitle => {
+                    self.flush();
+                    self.scope.pop();
+                }
+                TagEnd::DefinitionListDefinition => {
                     self.flush();
                     self.scope.pop();
                     self.queue_empty();

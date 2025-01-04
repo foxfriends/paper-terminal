@@ -80,6 +80,10 @@ h6 {
   dim: true;
 }
 
+dt {
+  bold: true
+}
+
 code {
   background-color: black;
   color: white;
