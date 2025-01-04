@@ -5,7 +5,7 @@ use crate::words::Words;
 use ansi_term::Style;
 use console::AnsiCodeIterator;
 use image::{self, GenericImageView as _};
-use pulldown_cmark::{Alignment, CodeBlockKind, Event, Tag};
+use pulldown_cmark::{Alignment, BlockQuoteKind, CodeBlockKind, Event, HeadingLevel, Tag, TagEnd};
 use std::convert::{TryFrom, TryInto};
 use std::io::{Read as _, Write as _};
 use std::process::{Command, Stdio};
@@ -18,7 +18,7 @@ enum Scope {
     Italic,
     Bold,
     Strikethrough,
-    Link,
+    Link { dest_url: String, title: String },
     Caption,
     FootnoteDefinition,
     FootnoteReference,
@@ -27,12 +27,12 @@ enum Scope {
     ListItem(Option<u64>, bool),
     Code,
     CodeBlock(String),
-    BlockQuote,
+    BlockQuote(Option<BlockQuoteKind>),
     Table(Vec<Alignment>),
     TableHead,
     TableRow,
     TableCell,
-    Heading(u32),
+    Heading(HeadingLevel),
 }
 
 impl Scope {
@@ -42,8 +42,8 @@ impl Scope {
             Scope::FootnoteContent => 4,
             Scope::ListItem(..) => 4,
             Scope::CodeBlock(..) => 2,
-            Scope::BlockQuote => 4,
-            Scope::Heading(2) => 5,
+            Scope::BlockQuote(..) => 4,
+            Scope::Heading(HeadingLevel::H2) => 5,
             Scope::Heading(..) => 4,
             _ => 0,
         }
@@ -51,11 +51,11 @@ impl Scope {
 
     fn prefix(&mut self) -> String {
         match self {
-            Scope::Indent => "    ".to_string(),
-            Scope::FootnoteContent => "    ".to_string(),
+            Scope::Indent => "    ".to_owned(),
+            Scope::FootnoteContent => "    ".to_owned(),
             Scope::ListItem(Some(index), ref mut handled) => {
                 if *handled {
-                    "    ".to_string()
+                    "    ".to_owned()
                 } else {
                     *handled = true;
                     format!("{: <4}", format!("{}.", index))
@@ -63,16 +63,16 @@ impl Scope {
             }
             Scope::ListItem(None, ref mut handled) => {
                 if *handled {
-                    "    ".to_string()
+                    "    ".to_owned()
                 } else {
                     *handled = true;
-                    "•   ".to_string()
+                    "•   ".to_owned()
                 }
             }
-            Scope::CodeBlock(..) => "  ".to_string(),
-            Scope::BlockQuote => "│   ".to_string(),
-            Scope::Heading(2) => "├─── ".to_string(),
-            Scope::Heading(..) => "    ".to_string(),
+            Scope::CodeBlock(..) => "  ".to_owned(),
+            Scope::BlockQuote(..) => "┃   ".to_owned(),
+            Scope::Heading(HeadingLevel::H2) => "├─── ".to_owned(),
+            Scope::Heading(..) => "    ".to_owned(),
             _ => String::new(),
         }
     }
@@ -80,7 +80,7 @@ impl Scope {
     fn suffix_len(&self) -> usize {
         match self {
             Scope::CodeBlock(..) => 2,
-            Scope::Heading(2) => 5,
+            Scope::Heading(HeadingLevel::H2) => 5,
             Scope::Heading(..) => 4,
             _ => 0,
         }
@@ -88,9 +88,9 @@ impl Scope {
 
     fn suffix(&mut self) -> String {
         match self {
-            Scope::CodeBlock(..) => "  ".to_string(),
-            Scope::Heading(2) => " ───┤".to_string(),
-            Scope::Heading(..) => "    ".to_string(),
+            Scope::CodeBlock(..) => "  ".to_owned(),
+            Scope::Heading(HeadingLevel::H2) => " ───┤".to_owned(),
+            Scope::Heading(..) => "    ".to_owned(),
             _ => String::new(),
         }
     }
@@ -103,7 +103,7 @@ impl Scope {
             Italic => "emphasis",
             Bold => "strong",
             Strikethrough => "strikethrough",
-            Link => "link",
+            Link { .. } => "link",
             Caption => "caption",
             FootnoteDefinition => "footnote-def",
             FootnoteReference => "footnote-ref",
@@ -113,18 +113,22 @@ impl Scope {
             ListItem(..) => "li",
             Code => "code",
             CodeBlock(..) => "codeblock",
-            BlockQuote => "blockquote",
+            BlockQuote(None) => "blockquote",
+            BlockQuote(Some(BlockQuoteKind::Note)) => "note-blockquote",
+            BlockQuote(Some(BlockQuoteKind::Tip)) => "tip-blockquote",
+            BlockQuote(Some(BlockQuoteKind::Important)) => "important-blockquote",
+            BlockQuote(Some(BlockQuoteKind::Warning)) => "warning-blockquote",
+            BlockQuote(Some(BlockQuoteKind::Caution)) => "caution-blockquote",
             Table(..) => "table",
             TableHead => "th",
             TableRow => "tr",
             TableCell => "td",
-            Heading(1) => "h1",
-            Heading(2) => "h2",
-            Heading(3) => "h3",
-            Heading(4) => "h4",
-            Heading(5) => "h5",
-            Heading(6) => "h6",
-            _ => "",
+            Heading(HeadingLevel::H1) => "h1",
+            Heading(HeadingLevel::H2) => "h2",
+            Heading(HeadingLevel::H3) => "h3",
+            Heading(HeadingLevel::H4) => "h4",
+            Heading(HeadingLevel::H5) => "h5",
+            Heading(HeadingLevel::H6) => "h6",
         }
     }
 }
@@ -345,10 +349,10 @@ impl<'a> Printer<'a> {
                 let language_context = if lang.is_empty() || !self.opts.syncat {
                     String::from("txt")
                 } else {
-                    lang.to_string()
+                    lang.to_owned()
                 };
                 let style = self.style3(Some(&[&language_context[..]]), None);
-                let lang = lang.to_string();
+                let lang = lang.to_owned();
                 let mut first_prefix = Some(self.prefix2(Some(&[&language_context[..]])));
                 let mut first_suffix = Some(self.suffix2(Some(&[&language_context[..]])));
 
@@ -375,7 +379,7 @@ impl<'a> Printer<'a> {
                         }
                         Err(error) => {
                             eprintln!("{}", error);
-                            buffer.to_string()
+                            buffer.to_owned()
                         }
                     }
                 } else {
@@ -587,32 +591,105 @@ impl<'a> Printer<'a> {
                     self.empty();
                 }
                 match tag {
+                    Tag::MetadataBlock(..) => self.scope.push(Scope::CodeBlock("".to_owned())),
+                    Tag::HtmlBlock => {}
                     Tag::Paragraph => {
                         self.flush();
                     }
-                    Tag::Heading(level) => {
+                    Tag::Heading {
+                        level: HeadingLevel::H1,
+                        ..
+                    } => {
                         self.flush();
-                        if level == 1 {
-                            self.print_rule();
-                        }
+                        self.print_rule();
+                        self.scope.push(Scope::Heading(HeadingLevel::H1));
+                    }
+                    Tag::Heading { level, .. } => {
+                        self.flush();
                         self.scope.push(Scope::Heading(level));
                     }
-                    Tag::BlockQuote => {
+                    Tag::BlockQuote(kind) => {
                         self.flush();
-                        self.scope.push(Scope::BlockQuote);
+                        self.scope.push(Scope::BlockQuote(kind));
+                        match kind {
+                            None => {}
+                            Some(BlockQuoteKind::Note) => {
+                                let style = Self::resolve_scopes(
+                                    &self.stylesheet,
+                                    &["note-blockquote"],
+                                    Some("prefix"),
+                                );
+                                self.handle_text(&format!(
+                                    "{} {}",
+                                    style.paint("󰋽"),
+                                    style.paint("Note")
+                                ));
+                            }
+                            Some(BlockQuoteKind::Tip) => {
+                                let style = Self::resolve_scopes(
+                                    &self.stylesheet,
+                                    &["tip-blockquote"],
+                                    Some("prefix"),
+                                );
+                                self.handle_text(&format!(
+                                    "{} {}",
+                                    style.paint("󰌶"),
+                                    style.paint("Tip")
+                                ));
+                            }
+                            Some(BlockQuoteKind::Important) => {
+                                let style = Self::resolve_scopes(
+                                    &self.stylesheet,
+                                    &["important-blockquote"],
+                                    Some("prefix"),
+                                );
+                                self.handle_text(&format!(
+                                    "{} {}",
+                                    style.paint("󱋉"),
+                                    style.paint("Important")
+                                ));
+                            }
+                            Some(BlockQuoteKind::Warning) => {
+                                let style = Self::resolve_scopes(
+                                    &self.stylesheet,
+                                    &["warning-blockquote"],
+                                    Some("prefix"),
+                                );
+                                self.handle_text(&format!(
+                                    "{} {}",
+                                    style.paint("󰀪"),
+                                    style.paint("Warning")
+                                ));
+                            }
+                            Some(BlockQuoteKind::Caution) => {
+                                let style = Self::resolve_scopes(
+                                    &self.stylesheet,
+                                    &["caution-blockquote"],
+                                    Some("prefix"),
+                                );
+                                self.handle_text(&format!(
+                                    "{} {}",
+                                    style.paint("󰳦"),
+                                    style.paint("Caution")
+                                ));
+                            }
+                        }
                     }
                     Tag::CodeBlock(CodeBlockKind::Indented) => {
                         self.flush();
-                        self.scope.push(Scope::CodeBlock("".to_string()));
+                        self.scope.push(Scope::CodeBlock("".to_owned()));
                     }
                     Tag::CodeBlock(CodeBlockKind::Fenced(language)) => {
                         self.flush();
-                        self.scope.push(Scope::CodeBlock(language.to_string()));
+                        self.scope.push(Scope::CodeBlock(language.into_string()));
                     }
                     Tag::List(start_index) => {
                         self.flush();
                         self.scope.push(Scope::List(start_index));
                     }
+                    Tag::DefinitionList => {}
+                    Tag::DefinitionListTitle => {}
+                    Tag::DefinitionListDefinition => {}
                     Tag::Item => {
                         self.flush();
                         if let Some(&Scope::List(index)) = self.scope.last() {
@@ -659,10 +736,17 @@ impl<'a> Printer<'a> {
                     Tag::Strikethrough => {
                         self.scope.push(Scope::Strikethrough);
                     }
-                    Tag::Link(_link_type, _destination, _title) => {
-                        self.scope.push(Scope::Link);
+                    Tag::Link {
+                        dest_url, title, ..
+                    } => {
+                        self.scope.push(Scope::Link {
+                            dest_url: dest_url.into_string(),
+                            title: title.into_string(),
+                        });
                     }
-                    Tag::Image(_link_type, destination, title) => {
+                    Tag::Image {
+                        dest_url, title, ..
+                    } => {
                         self.flush();
 
                         if !self.opts.no_images {
@@ -670,7 +754,7 @@ impl<'a> Printer<'a> {
                                 .width
                                 .saturating_sub(self.prefix_len())
                                 .saturating_sub(self.suffix_len());
-                            match image::open(destination.as_ref()) {
+                            match image::open(dest_url.as_ref()) {
                                 Ok(image) => {
                                     let (mut width, mut height) = image.dimensions();
                                     if width > available_width as u32 {
@@ -704,8 +788,11 @@ impl<'a> Printer<'a> {
                                 Err(error) => {
                                     self.handle_text("Cannot open image ");
                                     self.scope.push(Scope::Indent);
-                                    self.scope.push(Scope::Link);
-                                    self.handle_text(destination);
+                                    self.scope.push(Scope::Link {
+                                        dest_url: "".to_owned(),
+                                        title: "".to_owned(),
+                                    });
+                                    self.handle_text(dest_url);
                                     self.scope.pop();
                                     self.handle_text(&format!(": {}", error));
                                     self.scope.push(Scope::Caption);
@@ -721,10 +808,13 @@ impl<'a> Printer<'a> {
                                 self.handle_text(title);
                                 self.scope.pop();
                             }
-                            if !destination.is_empty() && !self.opts.hide_urls {
+                            if !dest_url.is_empty() && !self.opts.hide_urls {
                                 self.handle_text(" <");
-                                self.scope.push(Scope::Link);
-                                self.handle_text(destination);
+                                self.scope.push(Scope::Link {
+                                    dest_url: "".to_owned(),
+                                    title: "".to_owned(),
+                                });
+                                self.handle_text(dest_url);
                                 self.scope.pop();
                                 self.handle_text(">");
                             }
@@ -737,62 +827,68 @@ impl<'a> Printer<'a> {
             }
 
             Event::End(tag) => match tag {
-                Tag::Paragraph => {
+                TagEnd::Paragraph => {
                     self.flush();
                     self.queue_empty();
                 }
-                Tag::Heading(level) => {
+                TagEnd::Heading(HeadingLevel::H1) => {
                     self.flush();
                     self.scope.pop();
-                    if level == 1 {
-                        self.print_rule();
-                    }
+                    self.print_rule();
                     self.queue_empty();
                 }
-                Tag::List(..) => {
+                TagEnd::Heading(_) => {
                     self.flush();
                     self.scope.pop();
                     self.queue_empty();
                 }
-                Tag::Item => {
+                TagEnd::List(..) => {
+                    self.flush();
+                    self.scope.pop();
+                    self.queue_empty();
+                }
+                TagEnd::Item => {
                     self.flush();
                     self.scope.pop();
                     if let Some(Scope::List(index)) = self.scope.last_mut() {
                         *index = index.map(|x| x + 1);
                     }
                 }
-                Tag::BlockQuote => {
+                TagEnd::BlockQuote(..) => {
                     self.flush();
                     self.scope.pop();
                     self.queue_empty();
                 }
-                Tag::Table(..) => {
+                TagEnd::Table => {
                     self.print_table();
                     self.scope.pop();
                     self.queue_empty();
                 }
-                Tag::CodeBlock(..) => {
+                TagEnd::HtmlBlock => {}
+                TagEnd::CodeBlock => {
                     self.flush_buffer();
                     self.scope.pop();
                     self.queue_empty();
                 }
-                Tag::Link(_link_type, destination, title) => {
-                    if !title.is_empty() && !destination.is_empty() && !self.opts.hide_urls {
-                        self.handle_text(format!(" <{}: {}>", title, destination));
-                    } else if !destination.is_empty() && !self.opts.hide_urls {
-                        self.handle_text(format!(" <{}>", destination));
+                TagEnd::Link => {
+                    let Scope::Link { dest_url, title } = self.scope.pop().unwrap() else {
+                        panic!()
+                    };
+                    if !title.is_empty() && !dest_url.is_empty() && !self.opts.hide_urls {
+                        self.handle_text(format!(" <{}: {}>", title, dest_url));
+                    } else if !dest_url.is_empty() && !self.opts.hide_urls {
+                        self.handle_text(format!(" <{}>", dest_url));
                     } else if !title.is_empty() {
                         self.handle_text(format!(" <{}>", title));
                     }
-                    self.scope.pop();
                 }
-                Tag::Image(_link_type, _destination, _title) => {
+                TagEnd::Image => {
                     self.flush();
                     self.scope.pop();
                     self.scope.pop();
                     self.queue_empty();
                 }
-                Tag::FootnoteDefinition(..) => {
+                TagEnd::FootnoteDefinition => {
                     self.flush();
                     self.scope.pop();
                     self.queue_empty();
@@ -813,7 +909,13 @@ impl<'a> Printer<'a> {
                 self.handle_text(text);
                 self.scope.pop();
             }
-            Event::Html(_text) => { /* unimplemented */ }
+            Event::Html(_text) => { /* not rendered */ }
+            Event::InlineHtml(_text) => { /* not rendered */ }
+            Event::InlineMath(text) | Event::DisplayMath(text) => {
+                self.scope.push(Scope::Code);
+                self.handle_text(text);
+                self.scope.pop();
+            }
             Event::FootnoteReference(text) => {
                 self.scope.push(Scope::FootnoteReference);
                 self.handle_text(&format!("[{}]", text));

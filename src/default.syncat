@@ -2,10 +2,30 @@ shadow {
   background-color: brblack;
 }
 
-li "prefix",
-blockquote "prefix" {
+li & "prefix",
+blockquote & "prefix" {
   color: brblack;
   dim: true;
+}
+
+note-blockquote & "prefix" {
+  color: blue;
+}
+
+tip-blockquote & "prefix" {
+  color: green;
+}
+
+important-blockquote & "prefix" {
+  color: purple;
+}
+
+warning-blockquote & "prefix" {
+  color: yellow;
+}
+
+caution-blockquote & "prefix" {
+  color: red;
 }
 
 rule {
