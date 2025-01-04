@@ -27,3 +27,4 @@ directories-next = "2.0"
 syncat-stylesheet = { version = "3.5.0", features = ["ansi_term"] }
 unicode-width = "0.1"
 cjk = "0.2"
+clap_complete = "4.5.40"
