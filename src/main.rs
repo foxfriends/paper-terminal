@@ -1,5 +1,6 @@
 use ansi_term::Style;
-use clap::Parser as _;
+use clap::{CommandFactory, Parser as _};
+use clap_complete::Shell;
 use console::strip_ansi_codes;
 use pulldown_cmark::{Options, Parser};
 use std::convert::TryInto;
@@ -76,6 +77,10 @@ pub struct Opts {
     /// Files to print
     #[structopt(name = "FILE")]
     pub files: Vec<PathBuf>,
+
+    /// Generate shell completions
+    #[arg(alias = "completion")]
+    completions: Option<Shell>,
 }
 
 fn normalize(tab_len: usize, source: &str) -> String {
@@ -235,6 +240,14 @@ where
 
 fn main() {
     let opts = Opts::parse();
+
+    if opts.completions.is_some() {
+        let shell = opts.completions.or_else(Shell::from_env).unwrap();
+        let mut opts = Opts::command();
+        let name = opts.get_name().to_string();
+        clap_complete::generate(shell, &mut opts, name, &mut std::io::stdout());
+        std::process::exit(0);
+    }
 
     if opts.files.is_empty() {
         let mut string = String::new();
