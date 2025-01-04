@@ -43,8 +43,8 @@ include:
     >   Blockquotes
     >   >  And even nested block quotes
 
-    > [!IMPORTANT]
-    > Also alert blockquotes
+> [!IMPORTANT]
+> Also alert blockquotes
 
 9.  And even images! Here's a photo of my cat
 
