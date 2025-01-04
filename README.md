@@ -83,8 +83,9 @@ as an example of how this works. To override the default styles, create `paper.s
     *   `emphasis`
     *   `strikethrough`
     *   `code`
-    *   `blockquote`
+    *   `blockquote` (alert style blockquotes are represented separately, using the custom tags `note-blockquote`, `tip-blockquote`, `important-blockquote`, `warning-blockquote`, and `caution-blockquote`)
     *   `ul`, `ol`, `li`
+    *   `dl`, `dt`, `dd`
     *   `footnote-ref`, `footnote-def`, `footnote`
     *   `table`
     *   `caption`
@@ -93,7 +94,7 @@ as an example of how this works. To override the default styles, create `paper.s
 *   The paper and shadow can be matched with `paper` and `shadow`. Styles applied to `paper` are applied to everything.
 *   The `"prefix"` and `"suffix"` tokens can be used to match the decorations
     *   List item bullets
-    *   Blockquote markers
+    *   Blockquote (and alert) markers
     *   Code block margins
 *   The `"lang-tag"` token matches the language name written in the bottom corner of the code block
 *   You can apply styles to code blocks with a specific language by using the language name as the token
