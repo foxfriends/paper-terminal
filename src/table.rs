@@ -173,11 +173,23 @@ fn print_row<W: Write>(
             }
             line = line.trim().to_string();
             let padded = if alignment[i] == Alignment::Center {
-                format!(" {: ^width$} │", line, width = cols[i] - (line.len().saturating_sub(str_width(&line))))
+                format!(
+                    " {: ^width$} │",
+                    line,
+                    width = cols[i] - (line.len().saturating_sub(str_width(&line)))
+                )
             } else if alignment[i] == Alignment::Right {
-                format!(" {: >width$} │", line, width = cols[i] - (line.len().saturating_sub(str_width(&line))))
+                format!(
+                    " {: >width$} │",
+                    line,
+                    width = cols[i] - (line.len().saturating_sub(str_width(&line)))
+                )
             } else {
-                format!(" {: <width$} │", line, width = cols[i] - (line.len().saturating_sub(str_width(&line))))
+                format!(
+                    " {: <width$} │",
+                    line,
+                    width = cols[i] - (line.len().saturating_sub(str_width(&line)))
+                )
             };
             write!(w, "{}", paper_style.paint(padded)).unwrap();
         }

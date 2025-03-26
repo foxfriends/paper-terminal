@@ -2,8 +2,8 @@
 use ansi_term::ANSIStrings;
 use ansi_term::Colour::Fixed;
 use image::{
-    imageops::{self, FilterType},
     Pixel,
+    imageops::{self, FilterType},
 };
 use std::io::Write;
 

@@ -8,7 +8,7 @@ use std::fs;
 use std::io::{self, Read};
 use std::path::PathBuf;
 use syncat_stylesheet::Stylesheet;
-use terminal_size::{terminal_size, Width};
+use terminal_size::{Width, terminal_size};
 
 mod dirs;
 mod printer;
