@@ -9,7 +9,7 @@ license = "MIT"
 readme = "README.md"
 version = "3.1.0"
 authors = ["Cameron Eldridge <cam.eldridge@gmail.com>"]
-edition = "2018"
+edition = "2024"
 categories = ["command-line-utilities"]
 
 [[bin]]

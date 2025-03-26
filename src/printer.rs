@@ -56,7 +56,7 @@ impl Scope {
         match self {
             Scope::Indent => "    ".to_owned(),
             Scope::FootnoteContent => "    ".to_owned(),
-            Scope::ListItem(Some(index), ref mut handled) => {
+            Scope::ListItem(Some(index), handled) => {
                 if *handled {
                     "    ".to_owned()
                 } else {
@@ -64,7 +64,7 @@ impl Scope {
                     format!("{: <4}", format!("{}.", index))
                 }
             }
-            Scope::ListItem(None, ref mut handled) => {
+            Scope::ListItem(None, handled) => {
                 if *handled {
                     "    ".to_owned()
                 } else {
